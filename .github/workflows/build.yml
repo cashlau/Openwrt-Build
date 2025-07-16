@@ -34,6 +34,14 @@ jobs:
           mkdir -p openwrt/package/custom
           cp -r custom_deps/* openwrt/package/custom/
 
+      - name: Register manually added custom dependencies
+        run: |
+          cd openwrt
+          for d in ../custom_deps/*; do
+            pkg=$(basename "$d")
+            ./scripts/feeds install -f "$pkg" || echo "skip $pkg"
+          done
+
       - name: Run ext_packages.sh to clone plugins (optional)
         run: bash scripts/ext_packages.sh || echo "no ext_packages.sh script, skipping"
 
