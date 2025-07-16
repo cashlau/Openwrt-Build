@@ -21,7 +21,7 @@ jobs:
         run: git clone --depth=1 https://github.com/openwrt/openwrt openwrt
 
       - name: Replace feeds.conf.default with custom version
-        run: cp build/feeds.conf.default openwrt/feeds.conf.default
+        run: cp feeds.conf.default openwrt/feeds.conf.default
 
       - name: Prepare feeds (update & install all)
         run: |
