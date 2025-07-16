@@ -47,6 +47,14 @@ jobs:
       - name: Run extra plugin fetcher (optional)
         run: bash scripts/ext_packages.sh || echo "No ext_packages.sh script found"
 
+      - name: Cache downloads
+        uses: actions/cache@v4
+        with:
+          path: openwrt/dl
+          key: dl-cache-${{ hashFiles('config/.config') }}
+          restore-keys: |
+            dl-cache-
+
       - name: Start building
         run: |
           cd openwrt
@@ -59,3 +67,10 @@ jobs:
         with:
           name: OpenWrt-x86_64
           path: openwrt/bin/targets/x86/64/
+
+      - name: Upload build logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: openwrt/build.log
