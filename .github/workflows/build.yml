@@ -23,16 +23,16 @@ jobs:
       - name: Replace feeds.conf.default with custom version
         run: cp feeds.conf.default openwrt/feeds.conf.default
 
+      - name: Copy custom packages to OpenWrt package folder
+        run: |
+          mkdir -p openwrt/package/custom
+          cp -r custom_deps/* openwrt/package/custom/
+
       - name: Prepare feeds (update & install all)
         run: |
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-
-      - name: Copy custom packages to OpenWrt package folder
-        run: |
-          mkdir -p openwrt/package/custom
-          cp -r custom_deps/* openwrt/package/custom/
 
       - name: Register manually added custom dependencies
         run: |
