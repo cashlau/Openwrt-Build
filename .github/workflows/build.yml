@@ -11,7 +11,7 @@ jobs:
       - name: Checkout your repository
         uses: actions/checkout@v4
 
-      - name: Setup dependencies
+      - name: Setup build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex g++ gawk gcc-multilib gettext \
@@ -20,21 +20,21 @@ jobs:
       - name: Clone OpenWrt source
         run: git clone --depth=1 https://github.com/openwrt/openwrt openwrt
 
-      - name: Replace feeds.conf.default with custom version
-        run: cp feeds.conf.default openwrt/feeds.conf.default
+      - name: Replace default feeds.conf
+        run: cp config/feeds.conf.default openwrt/feeds.conf.default
 
-      - name: Copy custom packages to OpenWrt package folder
+      - name: Copy custom packages
         run: |
           mkdir -p openwrt/package/custom
           cp -r custom_deps/* openwrt/package/custom/
 
-      - name: Prepare feeds (update & install all)
+      - name: Update and install feeds
         run: |
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Register manually added custom dependencies
+      - name: Register custom packages
         run: |
           cd openwrt
           for d in ../custom_deps/*; do
@@ -42,20 +42,23 @@ jobs:
             ./scripts/feeds install -f "$pkg" || echo "skip $pkg"
           done
 
-      - name: Run ext_packages.sh to clone plugins (optional)
-        run: bash scripts/ext_packages.sh || echo "no ext_packages.sh script, skipping"
+      - name: Copy default config
+        run: cp config/.config openwrt/.config
 
-      - name: Run customization script (optional)
-        run: bash scripts/customize.sh || echo "no customize.sh script, skipping"
+      - name: Run customize script (timezone, IP, theme)
+        run: bash config/customize.sh
 
-      - name: Build OpenWrt firmware
+      - name: Run extra plugin fetcher (optional)
+        run: bash scripts/ext_packages.sh || echo "No ext_packages.sh script found"
+
+      - name: Start building
         run: |
           cd openwrt
           make defconfig
           make download -j$(nproc)
           make -j$(nproc) || make -j1 V=s
 
-      - name: Upload firmware artifact
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: OpenWrt-x86_64
