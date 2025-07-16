@@ -34,14 +34,6 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Register custom packages
-        run: |
-          cd openwrt
-          for d in ../custom_deps/*; do
-            pkg=$(basename "$d")
-            ./scripts/feeds install -f "$pkg" || echo "skip $pkg"
-          done
-
       - name: Copy default config
         run: cp config/.config openwrt/.config
 
