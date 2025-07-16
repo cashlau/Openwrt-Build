@@ -64,8 +64,7 @@ jobs:
           cd openwrt
           make defconfig
           make download -j2
-          nohup bash -c "while true; do echo '[CI] Building...'; sleep 60; done" &
-          make -j2 || make -j1 V=s 2>&1 | tee build.log
+          make -j2 V=s 2>&1 | tee build.log
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
