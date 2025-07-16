@@ -23,10 +23,19 @@ jobs:
       - name: Replace default feeds.conf
         run: cp config/feeds.conf.default openwrt/feeds.conf.default
 
-      - name: Update and install feeds
+      - name: Clean feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds clean
+
+      - name: Update feeds
         run: |
           cd openwrt
           ./scripts/feeds update -a
+
+      - name: Install feeds
+        run: |
+          cd openwrt
           ./scripts/feeds install -a
 
       - name: Copy default config
