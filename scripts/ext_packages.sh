@@ -55,6 +55,7 @@ for i in $(seq 1 $EXT_PACKAGES_COUNT); do
   fi
 done
 
+#  MosDns包 
 rm -rf feeds/packages/lang/golang
 git clone --depth=1 https://github.com/sbwml/packages_lang_golang -b 24.x feeds/packages/lang/golang
 
