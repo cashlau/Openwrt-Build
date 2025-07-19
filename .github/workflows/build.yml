@@ -1,4 +1,4 @@
-name: Build OpenWrt x86_64 - Simple Test
+name: Build OpenWrt x86_64
 
 on:
   workflow_dispatch:
@@ -10,23 +10,119 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整历史，确保所有文件完整
 
-      - name: Clone OpenWrt source
-        run: git clone https://github.com/openwrt/openwrt.git --depth=1 openwrt
+      - name: Free up disk space (dotnet, android, haskell, swap, etc.)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
 
-      - name: Copy scripts folder correctly
-        run: cp -r scripts/. openwrt/scripts/
+      - name: Show available disk space
+        run: df -h
 
-      - name: List openwrt/scripts contents
-        run: ls -l openwrt/scripts
+      - name: Enable universe repo and install dependencies
+        run: |
+          sudo add-apt-repository universe
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 python3-setuptools python3-distutils-extra \
+            build-essential clang flex bison g++ gawk \
+            gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
+            rsync unzip zlib1g-dev file wget python3-pyelftools ccache
 
-      - name: Run ext_packages.sh if present
+      - name: Prepare openwrt build directory
+        run: |
+          rm -rf openwrt
+          mkdir openwrt
+
+      - name: Clone latest OpenWrt source
+        run: |
+          git clone https://github.com/openwrt/openwrt.git --depth=1 openwrt
+
+      - name: Copy feeds.conf.default if exists
+        run: |
+          if [ -f config/feeds.conf.default ]; then
+            cp config/feeds.conf.default openwrt/feeds.conf.default
+          else
+            echo "No feeds.conf.default found in config/, skipping copy"
+          fi
+
+      - name: Update & install feeds
         run: |
           cd openwrt
-          if [ -f scripts/ext_packages.sh ]; then
-            chmod +x scripts/ext_packages.sh
-            ./scripts/ext_packages.sh
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Copy .config, customize.sh and scripts folder
+        run: |
+          cp config/.config openwrt/.config
+          cp config/customize.sh openwrt/
+          cp -r scripts openwrt/scripts
+          chmod +x openwrt/customize.sh openwrt/scripts/*.sh
+
+      - name: List openwrt/scripts contents before running ext_packages.sh
+        run: ls -l openwrt/scripts
+
+      - name: Show first 20 lines of ext_packages.sh
+        run: |
+          if [ -f openwrt/scripts/ext_packages.sh ]; then
+            head -n 20 openwrt/scripts/ext_packages.sh
           else
-            echo "❌ ext_packages.sh not found!"
+            echo "❌ ext_packages.sh 不存在！"
             exit 1
           fi
+
+      - name: Run ext_packages.sh with debug output
+        run: |
+          set -x
+          cd openwrt
+          chmod +x scripts/ext_packages.sh
+          ./scripts/ext_packages.sh
+
+      - name: Clean customize.sh to remove internal 'cd openwrt'
+        run: sed -i '/cd openwrt/d' openwrt/customize.sh
+
+      - name: Run customize.sh
+        run: |
+          cd openwrt
+          chmod +x customize.sh
+          ./customize.sh
+
+      - name: Make defconfig and download sources
+        run: |
+          cd openwrt
+          make defconfig
+          make download -j8
+
+      - name: Build OpenWrt (x86_64 only)
+        run: |
+          cd openwrt
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWrt-x86_64-firmware
+          path: openwrt/bin/targets/x86/64/**/*
+
+      - name: Upload scripts folder for debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-scripts-debug
+          path: openwrt/scripts
+
+      - name: Create GitHub Release and upload firmware
+        uses: ncipollo/release-action@v1
+        with:
+          tag: openwrt-x86_64-${{ github.run_id }}
+          name: OpenWrt x86_64 Build ${{ github.run_number }}
+          body: |
+            🎉 OpenWrt x86_64 自动构建成功！
+            📅 编译时间：${{ github.event.workflow_dispatch.timestamp }}
+          artifacts: openwrt/bin/targets/x86/64/**/*
