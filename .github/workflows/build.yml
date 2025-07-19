@@ -69,6 +69,9 @@ jobs:
             echo "No ext_packages.sh found"
           fi
 
+      - name: Clean customize.sh to remove internal 'cd openwrt'
+        run: sed -i '/cd openwrt/d' openwrt/customize.sh
+
       - name: Run customize.sh
         run: |
           cd openwrt
@@ -80,6 +83,7 @@ jobs:
           cd openwrt
           make defconfig
           make download -j8
+
 
 
       - name: Build OpenWrt (x86_64 only)
