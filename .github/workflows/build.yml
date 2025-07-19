@@ -1,4 +1,4 @@
-name: Build OpenWrt x86_64 (简短版)
+name: Build OpenWrt x86_64
 
 on:
   workflow_dispatch:
@@ -13,25 +13,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Show root scripts folder
+      - name: Show scripts folder at root before copy
         run: ls -l scripts
 
-      - name: Clone OpenWrt source
+      - name: Prepare openwrt build directory
+        run: |
+          rm -rf openwrt
+          mkdir -p openwrt
+
+      - name: Clone latest OpenWrt source
         run: git clone https://github.com/openwrt/openwrt.git --depth=1 openwrt
 
-      - name: Copy scripts folder
+      - name: Copy scripts folder into openwrt
         run: |
           cp -r scripts openwrt/scripts
+          echo "Copied scripts content:"
           ls -l openwrt/scripts
 
-      - name: Run ext_packages.sh with debug
+      - name: Show first 20 lines of ext_packages.sh
         run: |
-          set -x
-          cd openwrt
-          if [ -f scripts/ext_packages.sh ]; then
-            chmod +x scripts/ext_packages.sh
-            ./scripts/ext_packages.sh
+          if [ -f openwrt/scripts/ext_packages.sh ]; then
+            head -n 20 openwrt/scripts/ext_packages.sh
           else
             echo "❌ ext_packages.sh 不存在"
             exit 1
           fi
+
+      - name: Run ext_packages.sh
+        run: |
+          cd openwrt
+          chmod +x scripts/ext_packages.sh
+          ./scripts/ext_packages.sh
