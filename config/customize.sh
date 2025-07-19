@@ -2,7 +2,7 @@
 set -e
 
 # 如果源码根目录就是 openwrt ，就保留
-cd openwrt
+#cd openwrt
 
 # 修改默认 LAN IP
 sed -i 's/192.168.1.1/192.168.50.2/g' package/base-files/files/bin/config_generate
