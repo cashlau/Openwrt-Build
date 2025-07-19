@@ -10,6 +10,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整历史，避免文件缺失
+
+      - name: List root scripts directory before copy
+        run: ls -l scripts
 
       - name: Free up disk space (dotnet, android, haskell, swap, etc.)
         uses: jlumbroso/free-disk-space@main
@@ -64,11 +69,11 @@ jobs:
           cp -r scripts openwrt/scripts
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
 
-      - name: Debug - list scripts directory and show ext_packages.sh head
+      - name: List openwrt/scripts directory before running ext_packages.sh
+        run: ls -l openwrt/scripts
+
+      - name: Show first 20 lines of ext_packages.sh
         run: |
-          echo "=== List files in openwrt/scripts ==="
-          ls -l openwrt/scripts || echo "⚠️ openwrt/scripts 不存在"
-          echo "=== Show first 20 lines of ext_packages.sh ==="
           if [ -f openwrt/scripts/ext_packages.sh ]; then
             head -n 20 openwrt/scripts/ext_packages.sh
           else
@@ -77,7 +82,7 @@ jobs:
 
       - name: Run ext_packages.sh if exists
         run: |
-          set -x   # 打开详细命令输出
+          set -x
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
             chmod +x scripts/ext_packages.sh
