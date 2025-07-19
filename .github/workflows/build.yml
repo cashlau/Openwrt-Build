@@ -11,7 +11,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 拉取完整历史，避免文件缺失
+          fetch-depth: 0
+
+      - name: Free up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Show available disk space
+        run: df -h
 
       - name: Install dependencies
         run: |
