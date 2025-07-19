@@ -8,10 +8,6 @@ EXT_PACKAGES_PATH[1]="applications/luci-app-usb-printer"
 EXT_PACKAGES_REPOSITORIE[1]="https://github.com/coolsnowwolf/luci"
 EXT_PACKAGES_BRANCH[1]=""
 
-EXT_PACKAGES_NAME[2]="luci-app-autoreboot"
-EXT_PACKAGES_PATH[2]="applications/luci-app-autoreboot"
-EXT_PACKAGES_REPOSITORIE[2]="https://github.com/coolsnowwolf/luci"
-EXT_PACKAGES_BRANCH[2]=""
 
 EXT_PACKAGES_NAME[3]="luci-app-argon-config"
 EXT_PACKAGES_PATH[3]="applications/luci-app-argon-config"
