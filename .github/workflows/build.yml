@@ -2,9 +2,6 @@ name: Build OpenWrt x86_64
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
 
 jobs:
   build:
@@ -37,7 +34,6 @@ jobs:
             gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache
 
-
       - name: Prepare openwrt build directory
         run: |
           rm -rf openwrt
@@ -68,14 +64,28 @@ jobs:
           cp -r scripts openwrt/scripts
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
 
+      - name: Debug - list scripts directory and show ext_packages.sh head
+        run: |
+          echo "=== List files in openwrt/scripts ==="
+          ls -l openwrt/scripts || echo "⚠️ openwrt/scripts 不存在"
+          echo "=== Show first 20 lines of ext_packages.sh ==="
+          if [ -f openwrt/scripts/ext_packages.sh ]; then
+            head -n 20 openwrt/scripts/ext_packages.sh
+          else
+            echo "❌ ext_packages.sh 不存在"
+          fi
+
       - name: Run ext_packages.sh if exists
         run: |
+          set -x   # 打开详细命令输出
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
             chmod +x scripts/ext_packages.sh
             ./scripts/ext_packages.sh
           else
-            echo "No ext_packages.sh found"
+            echo "❌ scripts/ext_packages.sh 未找到！"
+            ls -al scripts || echo "scripts 目录不存在"
+            exit 1
           fi
 
       - name: Clean customize.sh to remove internal 'cd openwrt'
@@ -93,8 +103,6 @@ jobs:
           make defconfig
           make download -j8
 
-
-
       - name: Build OpenWrt (x86_64 only)
         run: |
           cd openwrt
@@ -105,6 +113,12 @@ jobs:
         with:
           name: OpenWrt-x86_64-firmware
           path: openwrt/bin/targets/x86/64/**/*
+
+      - name: Upload scripts folder for debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-scripts-debug
+          path: openwrt/scripts
 
       - name: Create GitHub Release and upload firmware
         uses: ncipollo/release-action@v1
