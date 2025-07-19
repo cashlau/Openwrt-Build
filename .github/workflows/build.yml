@@ -36,11 +36,15 @@ jobs:
           mkdir -p /mnt/openwrt
           ln -s /mnt/openwrt ./openwrt
 
+      - name: Prepare openwrt directory
+        run: rm -rf openwrt
+
       - name: Clone latest OpenWrt source
         run: |
           git clone https://github.com/openwrt/openwrt.git --depth=1 openwrt
           cd openwrt
           cp ../config/feeds.conf.default ./feeds.conf.default
+
 
       - name: Update & install feeds
         run: |
