@@ -1,4 +1,4 @@
-name: Build OpenWrt x86_64
+name: Build OpenWrt x86_64 - Simple Test
 
 on:
   workflow_dispatch:
@@ -10,37 +10,23 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Show scripts folder at root before copy
-        run: ls -l scripts
-
-      - name: Prepare openwrt build directory
-        run: |
-          rm -rf openwrt
-          mkdir -p openwrt
-
-      - name: Clone latest OpenWrt source
+      - name: Clone OpenWrt source
         run: git clone https://github.com/openwrt/openwrt.git --depth=1 openwrt
 
-      - name: Copy scripts folder into openwrt
-        run: |
-          cp -r scripts openwrt/scripts
-          echo "Copied scripts content:"
-          ls -l openwrt/scripts
+      - name: Copy scripts folder correctly
+        run: cp -r scripts/. openwrt/scripts/
 
-      - name: Show first 20 lines of ext_packages.sh
-        run: |
-          if [ -f openwrt/scripts/ext_packages.sh ]; then
-            head -n 20 openwrt/scripts/ext_packages.sh
-          else
-            echo "❌ ext_packages.sh 不存在"
-            exit 1
-          fi
+      - name: List openwrt/scripts contents
+        run: ls -l openwrt/scripts
 
-      - name: Run ext_packages.sh
+      - name: Run ext_packages.sh if present
         run: |
           cd openwrt
-          chmod +x scripts/ext_packages.sh
-          ./scripts/ext_packages.sh
+          if [ -f scripts/ext_packages.sh ]; then
+            chmod +x scripts/ext_packages.sh
+            ./scripts/ext_packages.sh
+          else
+            echo "❌ ext_packages.sh not found!"
+            exit 1
+          fi
