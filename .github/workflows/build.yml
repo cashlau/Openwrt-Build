@@ -63,6 +63,7 @@ jobs:
         run: |
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
+            chmod +x scripts/ext_packages.sh
             ./scripts/ext_packages.sh
           else
             echo "No ext_packages.sh found"
@@ -71,6 +72,7 @@ jobs:
       - name: Run customize.sh
         run: |
           cd openwrt
+          chmod +x customize.sh
           ./customize.sh
 
       - name: Make defconfig and download sources
@@ -78,6 +80,7 @@ jobs:
           cd openwrt
           make defconfig
           make download -j8
+
 
       - name: Build OpenWrt (x86_64 only)
         run: |
