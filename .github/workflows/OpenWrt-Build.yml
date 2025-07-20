@@ -37,7 +37,7 @@ jobs:
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache
 
       - name: Clone OpenWrt source
-        run: git clone https://github.com/openwrt/openwrt.git --depth=1 openwrt
+        run: git clone -b v24.10.2 --single-branch --depth=1 https://github.com/openwrt/openwrt.git
 
       - name: Copy feeds.conf.default
         run: |
