@@ -1,6 +1,7 @@
 name: Build OpenWrt x86_64
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 1 1,4,7,10 *'
 
