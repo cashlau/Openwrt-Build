@@ -116,4 +116,4 @@ jobs:
           body: |
             🎉 OpenWrt x86_64 自动构建成功！
             📅 编译时间：${{ github.event.workflow_dispatch.timestamp }}
-          artifacts: openwrt/bin/targets/x86/64/**/*
+          artifacts: openwrt/bin/targets/x86/64/*.img.gz
