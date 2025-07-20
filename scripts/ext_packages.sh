@@ -24,11 +24,6 @@ EXT_PACKAGES_PATH[4]="package/luci-app-pushbot"
 EXT_PACKAGES_REPOSITORIE[4]="https://github.com/zzsj0928/luci-app-pushbot"
 EXT_PACKAGES_BRANCH[4]=""
 
-EXT_PACKAGES_NAME[5]="nikki"
-EXT_PACKAGES_PATH[5]="package/nikki"
-EXT_PACKAGES_REPOSITORIE[5]="https://github.com/nikkinikki-org/OpenWrt-nikki.git"
-EXT_PACKAGES_BRANCH[5]=""
-
 EXT_PACKAGES_NAME[6]="luci-app-passwall"
 EXT_PACKAGES_PATH[6]="package/luci-app-passwall"
 EXT_PACKAGES_REPOSITORIE[6]="https://github.com/xiaorouji/openwrt-passwall.git"
