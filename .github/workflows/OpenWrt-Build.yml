@@ -99,13 +99,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: OpenWrt-x86_64-firmware
-          path: openwrt/bin/targets/x86/64/**/*
+          path: openwrt/bin/targets/x86/64/*
 
       - name: Upload scripts folder for debug
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-scripts-debug
           path: openwrt/scripts
+
+      - name: Get build time
+        id: buildtime
+        run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and upload firmware
         uses: ncipollo/release-action@v1
@@ -115,5 +119,5 @@ jobs:
           name: OpenWrt x86_64 Build ${{ github.run_number }}
           body: |
             🎉 OpenWrt x86_64 自动构建成功！
-            📅 编译时间：${{ github.event.workflow_dispatch.timestamp }}
+            📅 编译时间：${{ steps.buildtime.outputs.time }}
           artifacts: openwrt/bin/targets/x86/64/*.img.gz
