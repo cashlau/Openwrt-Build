@@ -2,56 +2,62 @@
 set -e
 set -x  # 打开调试输出，方便日志跟踪
 
-EXT_PACKAGES_COUNT=8
+declare -A EXT_PACKAGES_NAME=(
+  [1]="luci-app-usb-printer"
+  [2]="luci-app-argon-config"
+  [3]="luci-theme-argon"
+  [4]="luci-app-pushbot"
+  [5]="luci-app-passwall"
+  [6]="passwall-packages"
+  [7]="mosdns"
+)
 
-EXT_PACKAGES_NAME[1]="luci-app-usb-printer"
-EXT_PACKAGES_PATH[1]="package/luci-app-usb-printer"
-EXT_PACKAGES_REPOSITORIE[1]="https://github.com/cashlau/luci-app-usb_printer.git"
-EXT_PACKAGES_BRANCH[1]=""
+declare -A EXT_PACKAGES_PATH=(
+  [1]="package/luci-app-usb-printer"
+  [2]="package/luci-app-argon-config"
+  [3]="package/luci-theme-argon"
+  [4]="package/luci-app-pushbot"
+  [5]="package/luci-app-passwall"
+  [6]="package/passwall-packages"
+  [7]="package/mosdns"
+)
 
-EXT_PACKAGES_NAME[2]="luci-app-argon-config"
-EXT_PACKAGES_PATH[2]="package/luci-app-argon-config"
-EXT_PACKAGES_REPOSITORIE[2]="https://github.com/jerrykuku/luci-app-argon-config"
-EXT_PACKAGES_BRANCH[2]=""
+declare -A EXT_PACKAGES_REPOSITORY=(
+  [1]="https://github.com/cashlau/luci-app-usb_printer.git"
+  [2]="https://github.com/jerrykuku/luci-app-argon-config"
+  [3]="https://github.com/jerrykuku/luci-theme-argon"
+  [4]="https://github.com/zzsj0928/luci-app-pushbot"
+  [5]="https://github.com/xiaorouji/openwrt-passwall.git"
+  [6]="https://github.com/xiaorouji/openwrt-passwall-packages.git"
+  [7]="https://github.com/sbwml/luci-app-mosdns"
+)
 
-EXT_PACKAGES_NAME[3]="luci-theme-argon"
-EXT_PACKAGES_PATH[3]="package/luci-theme-argon"
-EXT_PACKAGES_REPOSITORIE[3]="https://github.com/jerrykuku/luci-theme-argon"
-EXT_PACKAGES_BRANCH[3]=""
+declare -A EXT_PACKAGES_BRANCH=(
+  [1]=""
+  [2]=""
+  [3]=""
+  [4]=""
+  [5]=""
+  [6]=""
+  [7]="v5"
+)
 
-EXT_PACKAGES_NAME[4]="luci-app-pushbot"
-EXT_PACKAGES_PATH[4]="package/luci-app-pushbot"
-EXT_PACKAGES_REPOSITORIE[4]="https://github.com/zzsj0928/luci-app-pushbot"
-EXT_PACKAGES_BRANCH[4]=""
+for i in "${!EXT_PACKAGES_NAME[@]}"; do
+  pkg_name="${EXT_PACKAGES_NAME[$i]}"
+  pkg_path="${EXT_PACKAGES_PATH[$i]}"
+  pkg_repo="${EXT_PACKAGES_REPOSITORY[$i]}"
+  pkg_branch="${EXT_PACKAGES_BRANCH[$i]}"
 
-EXT_PACKAGES_NAME[6]="luci-app-passwall"
-EXT_PACKAGES_PATH[6]="package/luci-app-passwall"
-EXT_PACKAGES_REPOSITORIE[6]="https://github.com/xiaorouji/openwrt-passwall.git"
-EXT_PACKAGES_BRANCH[6]=""
-
-EXT_PACKAGES_NAME[7]="passwall-packages"
-EXT_PACKAGES_PATH[7]="package/passwall-packages"
-EXT_PACKAGES_REPOSITORIE[7]="https://github.com/xiaorouji/openwrt-passwall-packages.git"
-EXT_PACKAGES_BRANCH[7]=""
-
-EXT_PACKAGES_NAME[8]="mosdns"
-EXT_PACKAGES_PATH[8]="package/mosdns"
-EXT_PACKAGES_REPOSITORIE[8]="https://github.com/sbwml/luci-app-mosdns"
-EXT_PACKAGES_BRANCH[8]="v5"
-
-for i in $(seq 1 $EXT_PACKAGES_COUNT); do
-  if [ ! -d "${EXT_PACKAGES_PATH[$i]}" ]; then
-    echo "Cloning ${EXT_PACKAGES_NAME[$i]} from ${EXT_PACKAGES_REPOSITORIE[$i]} ..."
-    if [ -z "${EXT_PACKAGES_BRANCH[$i]}" ]; then
-      git clone --depth=1 "${EXT_PACKAGES_REPOSITORIE[$i]}" "${EXT_PACKAGES_PATH[$i]}"
+  if [ ! -d "$pkg_path" ]; then
+    echo "Cloning $pkg_name from $pkg_repo ..."
+    if [ -z "$pkg_branch" ]; then
+      git clone --depth=1 "$pkg_repo" "$pkg_path"
     else
-      git clone --depth=1 -b "${EXT_PACKAGES_BRANCH[$i]}" "${EXT_PACKAGES_REPOSITORIE[$i]}" "${EXT_PACKAGES_PATH[$i]}"
+      git clone --depth=1 -b "$pkg_branch" "$pkg_repo" "$pkg_path"
     fi
-    rm -rf "${EXT_PACKAGES_PATH[$i]}/.git"
-    rm -rf "${EXT_PACKAGES_PATH[$i]}/docs"
-    rm -rf "${EXT_PACKAGES_PATH[$i]}/tests"
+    rm -rf "$pkg_path/.git" "$pkg_path/docs" "$pkg_path/tests"
   else
-    echo "${EXT_PACKAGES_NAME[$i]} already exists, skipping clone."
+    echo "$pkg_name already exists, skipping clone."
   fi
 done
 
@@ -69,7 +75,7 @@ git clone --depth=1 https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
 # 自动启用这些包的编译选项
 CONFIG_FILE=".config"
 
-for i in $(seq 1 $EXT_PACKAGES_COUNT); do
+for i in "${!EXT_PACKAGES_NAME[@]}"; do
   PKG="CONFIG_PACKAGE_${EXT_PACKAGES_NAME[$i]}=y"
   if grep -q "^${PKG}$" "$CONFIG_FILE"; then
     echo "$PKG already enabled"
