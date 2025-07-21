@@ -25,11 +25,13 @@ jobs:
           echo "scripts 文件夹内容："
           ls -al scripts || echo "❌ scripts 文件夹不存在"
 
+      - name: Prepare openwrt directory
+        run: mkdir -p openwrt/scripts
+
       - name: Copy config and scripts
         run: |
           cp config/.config openwrt/.config
           cp config/customize.sh openwrt/
-          mkdir -p openwrt/scripts
           cp -r scripts/. openwrt/scripts/
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
 
