@@ -17,8 +17,15 @@ jobs:
 
 
 
-      - name: Clone OpenWrt source
-        run: git clone -b v24.10.2 --single-branch --depth=1 https://github.com/openwrt/openwrt.git
+      - name: Check current directory and file paths
+        echo "当前工作目录是："
+        pwd
+        echo "根目录文件列表："
+        ls -l
+        echo "查看 config 目录内容："
+        ls -l config
+        echo "查看 openwrt 目录内容："
+        ls -l openwrt
 
       - name: Copy feeds.conf.default
         run: |
