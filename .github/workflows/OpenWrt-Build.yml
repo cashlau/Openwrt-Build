@@ -3,13 +3,43 @@ name: Build OpenWrt x86_64
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 1 1,4,7,10 *'
+    - cron: '0 2 * * *'  # 每天凌晨2点自动触发检查
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install jq (JSON工具)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Restore last built version cache
+        id: cache-version
+        uses: actions/cache@v3
+        with:
+          path: last_build_version.txt
+          key: last_build_version
+          restore-keys: last_build_version
+
+      - name: Get latest OpenWrt stable release tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/releases/latest | jq -r '.tag_name')
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: compare
+        run: |
+          LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
+          echo "Last built version: $LAST_VER"
+          echo "Latest upstream version: ${{ steps.get_latest_tag.outputs.latest_tag }}"
+          if [ "$LAST_VER" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
+            echo "No new version detected. Skipping build."
+            exit 78
+          else
+            echo "New version detected. Proceeding."
+          fi
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -38,14 +68,15 @@ jobs:
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache
 
       - name: Clone OpenWrt source
-        run: git clone -b v24.10.2 --single-branch --depth=1 https://github.com/openwrt/openwrt.git
+        run: |
+          git clone --depth=1 --branch ${{ steps.get_latest_tag.outputs.latest_tag }} https://github.com/openwrt/openwrt.git
 
       - name: Copy feeds.conf.default
         run: |
           if [ -f config/feeds.conf.default ]; then
             cp config/feeds.conf.default openwrt/feeds.conf.default
           else
-            echo "No feeds.conf.default found in config/, skipping copy"
+            echo "No feeds.conf.default found, skipping copy"
           fi
 
       - name: Update all feeds
@@ -64,7 +95,7 @@ jobs:
       - name: List openwrt/scripts contents
         run: ls -l openwrt/scripts
 
-      - name: Run ext_packages.sh if present (clone OpenWrt-nikki etc.)
+      - name: Run ext_packages.sh if present
         run: |
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
@@ -95,17 +126,13 @@ jobs:
           cd openwrt
           make -j$(nproc) || make -j1 V=s
 
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: OpenWrt-x86_64-firmware
-          path: openwrt/bin/targets/x86/64/*combined*.img.gz
-
-      - name: Upload scripts folder for debug
-        uses: actions/upload-artifact@v4
-        with:
-          name: openwrt-scripts-debug
-          path: openwrt/scripts
+      - name: Extract OpenWrt version
+        id: getversion
+        run: |
+          VERSION=$(grep '^VERSION:=' openwrt/include/version.mk | cut -d= -f2 | tr -d ' ')
+          PATCHLEVEL=$(grep '^PATCHLEVEL:=' openwrt/include/version.mk | cut -d= -f2 | tr -d ' ')
+          FULLVERSION="${VERSION}.${PATCHLEVEL}"
+          echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
 
       - name: Get build time
         id: buildtime
@@ -116,9 +143,16 @@ jobs:
         with:
           token: ${{ secrets.IGH_TOKEN }}
           tag: openwrt-x86_64-${{ github.run_id }}
-          name: OpenWrt x86_64 Build ${{ github.run_number }}
+          name: OpenWrt x86_64 ${{ steps.getversion.outputs.fullversion }}
           body: |
-            🎉 OpenWrt x86_64 自动构建成功！
-            📅 编译时间：${{ steps.buildtime.outputs.time }}
+            🎉 OpenWrt x86_64 ${{ steps.getversion.outputs.fullversion }}
+            📅 ${{ steps.buildtime.outputs.time }}
           artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
 
+      - name: Save latest built version to cache
+        run: echo "${{ steps.get_latest_tag.outputs.latest_tag }}" > last_build_version.txt
+
+      - uses: actions/cache@v3
+        with:
+          path: last_build_version.txt
+          key: last_build_version
