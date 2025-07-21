@@ -10,6 +10,7 @@ declare -A EXT_PACKAGES_NAME=(
   [5]="luci-app-passwall"
   [6]="passwall-packages"
   [7]="mosdns"
+  [8]="nikki"
 )
 
 declare -A EXT_PACKAGES_PATH=(
@@ -20,6 +21,7 @@ declare -A EXT_PACKAGES_PATH=(
   [5]="package/luci-app-passwall"
   [6]="package/passwall-packages"
   [7]="package/mosdns"
+  [8]="package/OpenWrt-nikki"
 )
 
 declare -A EXT_PACKAGES_REPOSITORY=(
@@ -30,6 +32,7 @@ declare -A EXT_PACKAGES_REPOSITORY=(
   [5]="https://github.com/xiaorouji/openwrt-passwall.git"
   [6]="https://github.com/xiaorouji/openwrt-passwall-packages.git"
   [7]="https://github.com/sbwml/luci-app-mosdns"
+  [8]="https://github.com/nikkinikki-org/OpenWrt-nikki.git"
 )
 
 declare -A EXT_PACKAGES_BRANCH=(
@@ -40,6 +43,7 @@ declare -A EXT_PACKAGES_BRANCH=(
   [5]=""
   [6]=""
   [7]="v5"
+  [8]="main"
 )
 
 for i in "${!EXT_PACKAGES_NAME[@]}"; do
@@ -85,7 +89,7 @@ for i in "${!EXT_PACKAGES_NAME[@]}"; do
   fi
 done
 
-# 启用额外包的配置
+# 启用额外包的配置（保证mosdns和v2ray-geodata被启用）
 grep -q "^CONFIG_PACKAGE_mosdns=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_v2ray-geodata=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
 
