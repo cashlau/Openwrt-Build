@@ -48,10 +48,9 @@ jobs:
             echo "No feeds.conf.default found in config/, skipping copy"
           fi
 
-      - name: Add Nikki feed & update/install feeds
+      - name: Update all feeds
         run: |
           cd openwrt
-          echo "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git;main" >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
@@ -65,7 +64,7 @@ jobs:
       - name: List openwrt/scripts contents
         run: ls -l openwrt/scripts
 
-      - name: Run ext_packages.sh if present
+      - name: Run ext_packages.sh if present (clone OpenWrt-nikki etc.)
         run: |
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
@@ -100,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: OpenWrt-x86_64-firmware
-          path: openwrt/bin/targets/x86/64/*
+          path: openwrt/bin/targets/x86/64/*combined*.img.gz
 
       - name: Upload scripts folder for debug
         uses: actions/upload-artifact@v4
@@ -121,4 +120,5 @@ jobs:
           body: |
             🎉 OpenWrt x86_64 自动构建成功！
             📅 编译时间：${{ steps.buildtime.outputs.time }}
-          artifacts: openwrt/bin/targets/x86/64/*combined*.img.gz
+          artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+
