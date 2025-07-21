@@ -1,42 +1,92 @@
-name: Build OpenWrt x86_64 - Debug Copy
+name: Build OpenWrt x86_64
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # 每天凌晨2点自动触发
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Restore last built version cache
+        id: cache-version
+        uses: actions/cache@v3
         with:
-          fetch-depth: 0
+          path: last_build_version.txt
+          key: last-build-version-cache
+          restore-keys: last-build-version-cache
 
-      - name: Show root directory files
-        run: ls -la
-
-      - name: Show config directory files
-        run: ls -la config
-
-      - name: Copy config and scripts with debug
+      - name: Get latest OpenWrt stable release tag
+        id: get_latest_tag
         run: |
-          echo "Current dir: $(pwd)"
-          echo "Copying config/.config ..."
+          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
+          echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: compare
+        run: |
+          LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
+          echo "Last built version: $LAST_VER"
+          echo "Latest upstream version: ${{ steps.get_latest_tag.outputs.latest_tag }}"
+          if [ "$LAST_VER" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
+            echo "No new version detected. Skipping build."
+            exit 78
+          else
+            echo "New version detected. Proceeding."
+          fi
+
+      - name: Clone OpenWrt source
+        env:
+          LATEST_TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
+        run: |
+          git clone --depth=1 --branch "$LATEST_TAG" https://github.com/openwrt/openwrt.git
+
+
+      - name: Update all feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Prepare openwrt/scripts directory
+        run: mkdir -p openwrt/scripts
+
+      - name: Copy config and scripts
+        run: |
           cp config/.config openwrt/.config
-          echo "Copying config/customize.sh ..."
           cp config/customize.sh openwrt/
-          echo "Copying scripts folder ..."
           cp -r scripts/. openwrt/scripts/
-          echo "Set execute permissions ..."
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
-          echo "Listing openwrt/scripts content:"
-          ls -la openwrt/scripts
 
-      - name: Verify copied files
+      - name: List openwrt/scripts contents
+        run: ls -l openwrt/scripts
+
+      - name: Run ext_packages.sh if present
         run: |
-          ls -la openwrt/
-          head -n 5 openwrt/.config
-          head -n 5 openwrt/customize.sh
+          cd openwrt
+          if [ -f scripts/ext_packages.sh ]; then
+            chmod +x scripts/ext_packages.sh
+            ./scripts/ext_packages.sh
+          else
+            echo "❌ ext_packages.sh not found!"
+            exit 1
+          fi
 
-      # 你后续可以继续build步骤
+      - name: Clean customize.sh to remove internal 'cd openwrt'
+        run: sed -i '/cd openwrt/d' openwrt/customize.sh
+
+      - name: Run customize.sh
+        run: |
+          cd openwrt
+          chmod +x customize.sh
+          ./customize.sh
+
+      - name: Make defconfig and download sources
+        run: |
+          cd openwrt
+          make defconfig
+          make download -j8
+
+
