@@ -24,8 +24,8 @@ jobs:
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/releases/latest | jq -r '.tag_name')
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
+          echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Compare versions
         id: compare
