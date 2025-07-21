@@ -10,12 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        
       - name: Copy config and scripts
         run: |
-          cp config/.config openwrt/.config
-          cp config/customize.sh openwrt/
-          cp -r scripts/. openwrt/scripts/
-          chmod +x openwrt/customize.sh openwrt/scripts/*.sh      
+        with:
+          fetch-depth: 0
+          
+       - name: Debug repo content
+         run: |
+           echo "当前路径：$(pwd)"
+           echo "目录列表：" 
+           ls -al
+           echo "config 文件夹内容："
+           ls -al config || echo "❌ config 文件夹不存在"
 
     
       - name: Install jq
