@@ -1,4 +1,4 @@
-name: Build OpenWrt x86_64 with Nikki
+name: Build OpenWrt x86_64
 
 on:
   workflow_dispatch:
