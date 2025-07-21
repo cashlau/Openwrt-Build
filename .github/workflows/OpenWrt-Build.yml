@@ -42,9 +42,7 @@ jobs:
 
       - name: Clone OpenWrt source
         run: |
-          git clone --depth=1 --branch $LATEST_TAG https://github.com/openwrt/openwrt.git
-        env:
-          LATEST_TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
+          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
 
       - name: Free up disk space
         uses: jlumbroso/free-disk-space@main
