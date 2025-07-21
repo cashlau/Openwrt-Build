@@ -1,23 +1,42 @@
-name: Check Config File
+name: Build OpenWrt x86_64 - Debug Copy
 
 on:
   workflow_dispatch:
 
 jobs:
-  check-config:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: List config directory
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show root directory files
+        run: ls -la
+
+      - name: Show config directory files
         run: ls -la config
 
-      - name: Show first 5 lines of config/.config if exists
+      - name: Copy config and scripts with debug
         run: |
-          if [ -f config/.config ]; then
-            head -n 5 config/.config
-          else
-            echo "config/.config 文件不存在"
-            exit 1
-          fi
+          echo "Current dir: $(pwd)"
+          echo "Copying config/.config ..."
+          cp config/.config openwrt/.config
+          echo "Copying config/customize.sh ..."
+          cp config/customize.sh openwrt/
+          echo "Copying scripts folder ..."
+          cp -r scripts/. openwrt/scripts/
+          echo "Set execute permissions ..."
+          chmod +x openwrt/customize.sh openwrt/scripts/*.sh
+          echo "Listing openwrt/scripts content:"
+          ls -la openwrt/scripts
+
+      - name: Verify copied files
+        run: |
+          ls -la openwrt/
+          head -n 5 openwrt/.config
+          head -n 5 openwrt/customize.sh
+
+      # 你后续可以继续build步骤
