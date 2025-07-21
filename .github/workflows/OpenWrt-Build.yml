@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install jq (JSON工具)
+      - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Restore last built version cache
@@ -41,8 +41,11 @@ jobs:
           fi
 
       - name: Clone OpenWrt source
+        env:
+          LATEST_TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
         run: |
-          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
+          git clone --depth=1 --branch "$LATEST_TAG" https://github.com/openwrt/openwrt.git
+
 
       - name: Free up disk space
         uses: jlumbroso/free-disk-space@main
