@@ -48,9 +48,10 @@ jobs:
             echo "No feeds.conf.default found in config/, skipping copy"
           fi
 
-      - name: Update & install feeds
+      - name: Add Nikki feed & update/install feeds
         run: |
           cd openwrt
+          echo "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git;main" >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
