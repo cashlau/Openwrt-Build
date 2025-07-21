@@ -10,13 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Restore last built version cache
-        id: cache-version
-        uses: actions/cache@v3
-        with:
-          path: last_build_version.txt
-          key: last-build-version-cache
-          restore-keys: last-build-version-cache
+      - uses: actions/checkout@v3
+
+      - name: Show config files
+        run: ls -al config/
+
+      - name: Prepare openwrt directories
+        run: mkdir -p openwrt/scripts
+
+      - name: Copy config files
+        run: |
+          cp config/.config openwrt/.config
+          cp config/customize.sh openwrt/
+          cp -r scripts/. openwrt/scripts/
+          chmod +x openwrt/customize.sh openwrt/scripts/*.sh
+
 
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
