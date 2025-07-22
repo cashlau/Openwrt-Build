@@ -51,10 +51,9 @@ jobs:
 
       # 6. 克隆 OpenWrt 源码（指定最新标签）
       - name: Clone OpenWrt source
-        env:
-          LATEST_TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
         run: |
-          git clone --depth=1 --branch "$LATEST_TAG" https://github.com/openwrt/openwrt.git
+          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
+
 
       # 7. 释放磁盘空间
       - name: Free up disk space
