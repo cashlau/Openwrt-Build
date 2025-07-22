@@ -8,14 +8,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
           TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags \
-            | grep -oP '^  "name": "\Kv[0-9\.]+' \
+            | jq -r '.[].name' \
+            | grep '^v[0-9]' \
             | grep -vE 'rc|SNAPSHOT' \
             | sort -Vr \
             | head -n1)
+          if [ -z "$TAG" ]; then
+            echo "No valid tag found, exiting."
+            exit 1
+          fi
           echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Clone OpenWrt source (shallow)
