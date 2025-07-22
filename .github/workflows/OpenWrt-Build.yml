@@ -33,6 +33,7 @@ jobs:
 
       - name: Clone OpenWrt source
         run: |
+          rm -rf openwrt
           git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
 
       - name: Clone OpenWrt source
