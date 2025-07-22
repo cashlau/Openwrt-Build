@@ -1,157 +1,36 @@
-name: Build OpenWrt x86_64
+name: Release OpenWrt x86_64 (No Build, Upload Firmware)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点自动触发
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Restore last built version cache
-        id: cache-version
-        uses: actions/cache@v3
-        with:
-          path: last_build_version.txt
-          key: last-build-version-cache
-          restore-keys: last-build-version-cache
 
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
-          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
+          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags \
+          | jq -r '.[].name' \
+          | grep '^v[0-9]' \
+          | grep -vE 'rc|SNAPSHOT' \
+          | sort -Vr \
+          | head -n1)
           echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Compare versions
-        id: compare
-        run: |
-          LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
-          echo "Last built version: $LAST_VER"
-          echo "Latest upstream version: ${{ steps.get_latest_tag.outputs.latest_tag }}"
-          if [ "$LAST_VER" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
-            echo "No new version detected. Skipping build."
-            exit 78
-          else
-            echo "New version detected. Proceeding."
-          fi
+      - name: Clone OpenWrt source (shallow)
+        run: git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
 
-      - name: Clone OpenWrt source
-        run: |
-          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
-
-      - name: Free up disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
-
-      - name: Show available disk space
-        run: df -h
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3 python3-setuptools python3-distutils-extra \
-            build-essential clang flex bison g++ gawk \
-            gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
-            rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
-
-      - name: Update all feeds
-        run: |
-          cd openwrt
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
-      - name: Prepare openwrt/scripts directory
-        run: mkdir -p openwrt/scripts
-
-      - name: Copy config and scripts
-        run: |
-          cp config/.config openwrt/.config
-          cp config/customize.sh openwrt/
-          cp -r scripts/. openwrt/scripts/
-          chmod +x openwrt/customize.sh openwrt/scripts/*.sh
-
-      - name: List openwrt/scripts contents
-        run: ls -l openwrt/scripts
-
-      - name: Run ext_packages.sh if present
-        run: |
-          cd openwrt
-          if [ -f scripts/ext_packages.sh ]; then
-            chmod +x scripts/ext_packages.sh
-            ./scripts/ext_packages.sh
-          else
-            echo "❌ ext_packages.sh not found!"
-            exit 1
-          fi
-
-      - name: Run customize.sh
-        run: |
-          cd openwrt
-          chmod +x customize.sh
-          ./customize.sh
-
-      - name: Make defconfig and download sources
-        run: |
-          cd openwrt
-          make defconfig
-          make download -j8
-
-      - name: Build OpenWrt x86_64
-        run: |
-          cd openwrt
-          make -j$(nproc) || make -j1 V=s
-
-      - name: Extract and validate OpenWrt version
+      - name: Get version from git tag
         id: getversion
         run: |
           cd openwrt
-          set -euo pipefail  # 严格模式，防止错误传播
-          
-          # 1. 提取原始版本
-          RAW_VERSION=$(grep '^VERSION_NUMBER:=' include/version.mk | head -1 | cut -d= -f2 | xargs)
-          echo "原始版本: $RAW_VERSION"
-
-          # 2. 清理版本号（保留数字和点）
-          CLEAN_VERSION=$(echo "$RAW_VERSION" | sed 's/[^0-9.]//g')
-          echo "清理后版本: $CLEAN_VERSION"
-
-          # 3. 验证格式（X.Y 或 X.Y.Z）
-          if ! echo "$CLEAN_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
-            echo "❌ 错误：版本格式应为 X.Y 或 X.Y.Z"
-            exit 1
-          fi
-
-          # 4. 标准化为 vX.Y.Z
-          if [ $(echo "$CLEAN_VERSION" | tr -cd '.' | wc -c) -eq 1 ]; then
-            FULLVERSION="v${CLEAN_VERSION}.0"  # 补全为 X.Y.0
-          else
-            FULLVERSION="v${CLEAN_VERSION}"    # 保持 X.Y.Z
-          fi
-
-          echo "✅ 最终版本: $FULLVERSION"
-          echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
-
-      - name: Debug version info
-        run: |
-          echo "最终发布的版本tag: ${{ steps.getversion.outputs.fullversion }}"
-          if ! echo "${{ steps.getversion.outputs.fullversion }}" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "❌ 错误：生成的tag格式无效"
-            exit 1
-          fi
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Get build time
         id: buildtime
@@ -161,22 +40,13 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.IGH_TOKEN }}
-          tag: ${{ steps.getversion.outputs.fullversion }}
-          name: OpenWrt x86_64 ${{ steps.getversion.outputs.fullversion }}
+          tag: ${{ steps.getversion.outputs.version }}
+          name: OpenWrt x86_64 ${{ steps.getversion.outputs.version }}
           body: |
-            🎉 OpenWrt x86_64 ${{ steps.getversion.outputs.fullversion }}
+            🎉 OpenWrt x86_64 ${{ steps.getversion.outputs.version }}
             📅 构建时间：${{ steps.buildtime.outputs.time }}
-            🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.get_latest_tag.outputs.latest_tag }}
+            🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.getversion.outputs.version }}
             🛠️ 构建日志：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
           makeLatest: true
           skipIfReleaseExists: true
-
-      - name: Save latest built version to file
-        run: echo "${{ steps.getversion.outputs.fullversion }}" > last_build_version.txt
-
-      - name: Save last built version cache
-        uses: actions/cache@v3
-        with:
-          path: last_build_version.txt
-          key: last-build-version-cache-${{ steps.getversion.outputs.fullversion }}
