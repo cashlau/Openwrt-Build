@@ -24,7 +24,7 @@ mkdir -p files/etc
 # 写入自定义banner内容
 mkdir -p files/etc
 
-cat > files/etc/banner <<'EOF'
+cat > files/etc/banner <<EOF
  __    __   __    __       ___   ____    __    ____  _______  __  
 |  |  |  | |  |  |  |     /   \  \   \  /  \  /   / |   ____||  | 
 |  |__|  | |  |  |  |    /  ^  \  \   \/    \/   /  |  |__   |  | 
