@@ -10,12 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Clone OpenWrt repo (shallow)
-        run: git clone --depth=1 https://github.com/openwrt/openwrt.git
-
       - name: Extract OpenWrt version
         id: getversion
-        run: |
+        run: |        # run: 后面是多行命令，接下来每行必须多缩进两个空格
           cd openwrt
           VERSION=$(grep '^VERSION_NUMBER:=' include/version.mk | head -1 | sed 's/.*:= *//')
           if echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+$'; then
@@ -28,6 +25,7 @@ jobs:
 
       - name: Show extracted version
         run: echo "Extracted version is: ${{ steps.getversion.outputs.fullversion }}"
+
 
       - name: Create GitHub Release (Draft)
         uses: ncipollo/release-action@v1
