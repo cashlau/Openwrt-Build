@@ -12,6 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Get latest OpenWrt stable release tag
+        id: get_latest_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
+          echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: compare
+        run: |
+          LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
+          echo "Last built version: $LAST_VER"
+          echo "Latest upstream version: ${{ steps.get_latest_tag.outputs.latest_tag }}"
+          if [ "$LAST_VER" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
+            echo "No new version detected. Skipping build."
+            exit 78
+          else
+            echo "New version detected. Proceeding."
+          fi
+
       - name: Clone OpenWrt source
         run: |
           git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
