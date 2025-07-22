@@ -10,7 +10,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 这里你需要写你的 OpenWrt 编译步骤，我用一个示例替代
+      # 模拟构建输出文件（你替换成真实编译步骤）
       - name: Simulate build output
         run: |
           mkdir -p openwrt/bin/targets/x86/64
@@ -20,7 +20,6 @@ jobs:
       - name: Extract OpenWrt version
         id: getversion
         run: |
-          # 模拟版本号输出
           FULLVERSION="24.10.2.0"
           echo "Detected version: $FULLVERSION"
           echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
@@ -40,7 +39,7 @@ jobs:
           body: |
             🎉 OpenWrt x86_64 ${{ steps.getversion.outputs.fullversion }}
             📅 构建时间：${{ steps.buildtime.outputs.time }}
-          files: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+          artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
 
       # 22. 保存版本号到文件
       - name: Save latest built version to file
