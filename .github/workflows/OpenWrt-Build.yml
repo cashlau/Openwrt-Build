@@ -22,7 +22,7 @@ jobs:
       - name: Create GitHub Release and upload dummy firmware
         uses: ncipollo/release-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.IGH_TOKEN }}
           tag: ${{ steps.set_version.outputs.fullversion }}
           name: OpenWrt x86_64 ${{ steps.set_version.outputs.fullversion }}
           body: |
