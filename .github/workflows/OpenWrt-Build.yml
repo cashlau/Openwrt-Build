@@ -1,60 +1,33 @@
-name: Build OpenWrt x86_64
+name: Test Release OpenWrt x86_64
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点自动触发
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Get latest OpenWrt stable release tag
-        id: get_latest_tag
+      - name: Set test version
+        id: set_version
+        run: echo "fullversion=v24.10.2" >> $GITHUB_OUTPUT
+
+      - name: Prepare dummy artifact
         run: |
-          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
-          echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
+          mkdir -p openwrt/bin/targets/x86/64
+          echo "dummy openwrt firmware file" > openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
 
-      - name: Compare versions
-        id: compare
-        run: |
-          LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
-          echo "Last built version: $LAST_VER"
-          echo "Latest upstream version: ${{ steps.get_latest_tag.outputs.latest_tag }}"
-          if [ "$LAST_VER" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
-            echo "No new version detected. Skipping build."
-            exit 78
-          else
-            echo "New version detected. Proceeding."
-          fi
-
-      - name: Clone OpenWrt source
-        run: |
-          echo "🧹 清理已有 openwrt 目录（如存在）"
-          rm -rf openwrt
-
-          echo "📥 克隆 OpenWrt 源码 tag：${{ steps.get_latest_tag.outputs.latest_tag }}"
-          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
-
-      - name: 🧪 Test extract OpenWrt version from version.mk
-        run: |
-          cd openwrt
-          echo "🧾 内容预览："
-          head -n 10 include/version.mk || echo "⚠️ version.mk 文件不存在！"
-
-          VERSION_MAJOR=$(grep '^VERSION_NUMBER:=' include/version.mk | sed 's/^VERSION_NUMBER:=//g' | xargs)
-          VERSION_PATCH=$(grep '^VERSION_PATCH:=' include/version.mk | sed 's/^VERSION_PATCH:=//g' | xargs)
-
-          if [ -z "$VERSION_MAJOR" ]; then
-            echo "❌ 未能解析 VERSION_NUMBER"
-            exit 1
-          fi
-
-          FULLVERSION="v$VERSION_MAJOR"
-          [ -n "$VERSION_PATCH" ] && FULLVERSION="$FULLVERSION.$VERSION_PATCH"
-
-          echo "✅ 提取成功：OpenWrt 版本为 $FULLVERSION"
-          echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
+      - name: Create GitHub Release and upload dummy firmware
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.set_version.outputs.fullversion }}
+          name: OpenWrt x86_64 ${{ steps.set_version.outputs.fullversion }}
+          body: |
+            🎉 OpenWrt x86_64 ${{ steps.set_version.outputs.fullversion }}
+            📅 构建时间：$(date '+%Y-%m-%d %H:%M:%S')
+          artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+          makeLatest: true
+          skipIfReleaseExists: true
