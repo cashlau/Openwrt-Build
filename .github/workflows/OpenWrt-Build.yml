@@ -115,7 +115,6 @@ jobs:
           cd openwrt
           make -j$(nproc) || make -j1 V=s
 
-      # ✅ 提取 OpenWrt 版本号
       - name: Extract OpenWrt version
         id: getversion
         run: |
