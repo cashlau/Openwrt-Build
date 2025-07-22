@@ -141,8 +141,8 @@ jobs:
         id: getversion
         run: |
           cd openwrt
-          VERSION=$(make -s -f include/version.mk VAL=VERSION printval)
-          PATCHLEVEL=$(make -s -f include/version.mk VAL=PATCHLEVEL printval)
+          VERSION=$(grep '^VERSION:=' include/version.mk | cut -d '=' -f2 | tr -d ' ')
+          PATCHLEVEL=$(grep '^PATCHVER:=' include/version.mk | cut -d '=' -f2 | tr -d ' ')
           FULLVERSION="${VERSION}.${PATCHLEVEL}"
           echo "Detected version: $FULLVERSION"
           echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
@@ -174,3 +174,4 @@ jobs:
         with:
           path: last_build_version.txt
           key: last-build-version-cache-${{ steps.getversion.outputs.fullversion }}
+
