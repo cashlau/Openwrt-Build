@@ -1,18 +1,36 @@
-name: Test Banner Script
+name: Test Banner
 
 on:
   workflow_dispatch:
 
 jobs:
-  test-banner:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Create customize.sh
+        run: |
+          cat > customize.sh <<'EOF'
+#!/bin/bash
+mkdir -p files/etc
+BUILD_DATE=$(date +"%Y-%m-%d %H:%M:%S")
+cat > files/etc/banner <<EOB
+ __    __   __    __       ___   ____    __    ____  _______  __  
+|  |  |  | |  |  |  |     /   \  \   \  /  \  /   / |   ____||  | 
+|  |__|  | |  |  |  |    /  ^  \  \   \/    \/   /  |  |__   |  | 
+|   __   | |  |  |  |   /  /_\  \  \            /   |   __|  |  | 
+|  |  |  | |  \`--'  |  /  _____  \  \    /\    /    |  |____ |  | 
+|__|  |__|  \______/  /__/     \__\  \__/  \__/     |_______||__|                                                                 
+-----------------------------------------------------------------                                                                                          
+Welcome to HUA WEI Router!
+Build Date: $BUILD_DATE
+EOB
+echo "✅ Banner file created."
+EOF
 
-      - name: Run customize.sh
+      - name: Run script
         run: |
           chmod +x customize.sh
           ./customize.sh
-          echo "--- Banner content ---"
-          cat files/etc/banner
+
+      - name: Show banner
+        run: cat files/etc/banner
