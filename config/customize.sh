@@ -16,12 +16,9 @@ sed -i "s/hostname='OpenWrt'/hostname='HUAWEI'/g" package/base-files/files/bin/c
 # 修改默认主题为 argon，确保你已经拉取了 luci-theme-argon
 sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
 
-# -------- 修改登录banner --------
+# -------- 修改登录 banner --------
 
 # 创建 banner 文件目录
-mkdir -p files/etc
-
-# 写入自定义banner内容
 mkdir -p files/etc
 
 cat > files/etc/banner <<EOF
@@ -36,5 +33,19 @@ Welcome to HUA WEI Router!
 Build Date: $(date +"%Y-%m-%d %H:%M:%S")
 EOF
 
-
 echo "Custom banner has been set."
+
+# -------- 设置 DHCP 顺序分配和起始地址为 .10 --------
+
+mkdir -p files/etc/uci-defaults
+
+cat > files/etc/uci-defaults/99-dhcp-sequential <<'EOF'
+#!/bin/sh
+uci set dhcp.lan.start='10'
+uci set dhcp.lan.limit='150'
+uci set dhcp.@dnsmasq[0].sequential_ip='1'
+uci commit dhcp
+EOF
+
+chmod +x files/etc/uci-defaults/99-dhcp-sequential
+echo "DHCP 顺序分配设置已完成（起始地址 .10）"
