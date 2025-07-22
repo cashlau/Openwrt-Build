@@ -120,8 +120,11 @@ jobs:
         run: |
           cd openwrt
           VERSION=$(grep '^VERSION_NUMBER:=' include/version.mk | head -1 | sed 's/.*:= *//')
-          PATCHLEVEL=0
-          FULLVERSION="v${VERSION}.${PATCHLEVEL}"
+          if echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+$'; then
+            FULLVERSION="v${VERSION}.0"
+          else
+            FULLVERSION="v${VERSION}"
+          fi
           echo "Detected version: $FULLVERSION"
           echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
 
