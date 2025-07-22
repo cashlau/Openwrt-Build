@@ -18,14 +18,16 @@ sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/M
 
 # -------- 修改登录 banner --------
 
+#!/bin/bash
+
 # 创建 banner 文件目录
 mkdir -p files/etc
 
-# 先获取构建时间
+# 生成构建时间
 BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-# 写入 banner 文件，包含构建时间
-cat > files/etc/banner <<EOF
+# 使用 cat <<'EOF' 保留原始格式，避免 shell 替换 ASCII 字符
+cat <<'EOT' > files/etc/banner
  __    __   __    __       ___   ____    __    ____  _______  __  
 |  |  |  | |  |  |  |     /   \  \   \  /  \  /   / |   ____||  | 
 |  |__|  | |  |  |  |    /  ^  \  \   \/    \/   /  |  |__   |  | 
@@ -34,10 +36,14 @@ cat > files/etc/banner <<EOF
 |__|  |__|  \______/  /__/     \__\  \__/  \__/     |_______||__|                                                                 
 -----------------------------------------------------------------                                                                                          
 Welcome to HUA WEI Router!
-Build Date: $BUILD_DATE
-EOF
+Build Date: __BUILD_DATE__
+EOT
 
-echo "Custom banner has been set."
+# 替换占位符
+sed -i "s|__BUILD_DATE__|$BUILD_DATE|g" files/etc/banner
+
+echo "✅ Custom banner has been set."
+
 
 
 # -------- 设置 DHCP 顺序分配和起始地址 --------
