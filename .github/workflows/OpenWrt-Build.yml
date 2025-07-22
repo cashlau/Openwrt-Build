@@ -16,12 +16,7 @@ jobs:
       # 2. 安装 jq
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
-
-      # 2.5 清理版本缓存文件，强制触发构建测试
-      - name: Clear last build version cache file
-        run: |
-          echo "Clearing version cache file to force build"
-          rm -f last_build_version.txt
+        
 
       # 3. 恢复上次构建版本缓存
       - name: Restore last built version cache
