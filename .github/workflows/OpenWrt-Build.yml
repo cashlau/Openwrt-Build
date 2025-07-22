@@ -8,13 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
           TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags \
-            | jq -r '.[].name' \
-            | grep '^v[0-9]' \
+            | grep -oP '^  "name": "\Kv[0-9\.]+' \
             | grep -vE 'rc|SNAPSHOT' \
             | sort -Vr \
             | head -n1)
@@ -38,7 +36,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.IGH_TOKEN }}
-          tag: ${{ steps.getversion.outputs.version }}-test
+          tag: ${{ steps.getversion.outputs.version }}
           name: OpenWrt x86_64 ${{ steps.getversion.outputs.version }}
           body: |
             🧪 OpenWrt x86_64 测试发布，未编译固件
