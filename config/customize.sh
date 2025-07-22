@@ -32,7 +32,7 @@ cat > files/etc/banner <<'EOF'
  |_| |_|  \___/  /_/   \_\    \_/\_/    |_____| |___|
                                                      
 Welcome to HUA WEI Router!
-Build Date: 2025-07-19
+Build Date: $(date +"%Y-%m-%d %H:%M:%S")
 EOF
 
 
