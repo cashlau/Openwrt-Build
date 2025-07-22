@@ -1,4 +1,4 @@
-name: Release OpenWrt x86_64 (No Build, Upload Firmware)
+name: OpenWrt x86_64 Release (No Build, No Firmware Upload)
 
 on:
   workflow_dispatch:
@@ -15,11 +15,11 @@ jobs:
         id: get_latest_tag
         run: |
           TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags \
-          | jq -r '.[].name' \
-          | grep '^v[0-9]' \
-          | grep -vE 'rc|SNAPSHOT' \
-          | sort -Vr \
-          | head -n1)
+            | jq -r '.[].name' \
+            | grep '^v[0-9]' \
+            | grep -vE 'rc|SNAPSHOT' \
+            | sort -Vr \
+            | head -n1)
           echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Clone OpenWrt source (shallow)
@@ -32,21 +32,20 @@ jobs:
           VERSION=$(git describe --tags --abbrev=0)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Get build time
+      - name: Get current time
         id: buildtime
         run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release and upload firmware
+      - name: Create GitHub Release (No Build)
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.IGH_TOKEN }}
-          tag: ${{ steps.getversion.outputs.version }}
+          tag: ${{ steps.getversion.outputs.version }}-test
           name: OpenWrt x86_64 ${{ steps.getversion.outputs.version }}
           body: |
-            🎉 OpenWrt x86_64 ${{ steps.getversion.outputs.version }}
-            📅 构建时间：${{ steps.buildtime.outputs.time }}
-            🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.getversion.outputs.version }}
-            🛠️ 构建日志：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
-          makeLatest: true
+            🧪 OpenWrt x86_64 测试发布，未编译固件
+            🔖 版本: ${{ steps.getversion.outputs.version }}
+            📅 时间: ${{ steps.buildtime.outputs.time }}
+          draft: false
+          prerelease: true
           skipIfReleaseExists: true
