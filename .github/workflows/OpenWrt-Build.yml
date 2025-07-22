@@ -32,12 +32,13 @@ jobs:
           fi
 
       - name: Clone OpenWrt source
-          run: |
-              echo "🧹 清理已有 openwrt 目录（如存在）"
-              rm -rf openwrt
+        run: |
+          echo "🧹 清理已有 openwrt 目录（如存在）"
+          rm -rf openwrt
 
-              echo "📥 克隆 OpenWrt 源码 tag：${{ steps.get_latest_tag.outputs.latest_tag }}"
-              git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
+          echo "📥 克隆 OpenWrt 源码 tag：${{ steps.get_latest_tag.outputs.latest_tag }}"
+          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
+
 
 
       - name: 🧪 Test extract OpenWrt version from version.mk
