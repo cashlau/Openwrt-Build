@@ -39,16 +39,14 @@ jobs:
           echo "📥 克隆 OpenWrt 源码 tag：${{ steps.get_latest_tag.outputs.latest_tag }}"
           git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
 
-
-
       - name: 🧪 Test extract OpenWrt version from version.mk
         run: |
           cd openwrt
           echo "🧾 内容预览："
           head -n 10 include/version.mk || echo "⚠️ version.mk 文件不存在！"
 
-          VERSION_MAJOR=$(grep '^VERSION_NUMBER:=' include/version.mk | cut -d ':=' -f2 | xargs)
-          VERSION_PATCH=$(grep '^VERSION_PATCH:=' include/version.mk | cut -d ':=' -f2 | xargs)
+          VERSION_MAJOR=$(grep '^VERSION_NUMBER:=' include/version.mk | sed 's/^VERSION_NUMBER:=//g' | xargs)
+          VERSION_PATCH=$(grep '^VERSION_PATCH:=' include/version.mk | sed 's/^VERSION_PATCH:=//g' | xargs)
 
           if [ -z "$VERSION_MAJOR" ]; then
             echo "❌ 未能解析 VERSION_NUMBER"
@@ -59,3 +57,4 @@ jobs:
           [ -n "$VERSION_PATCH" ] && FULLVERSION="$FULLVERSION.$VERSION_PATCH"
 
           echo "✅ 提取成功：OpenWrt 版本为 $FULLVERSION"
+          echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
