@@ -119,28 +119,30 @@ jobs:
         id: getversion
         run: |
           cd openwrt
-          # 更健壮的版本提取
+          set -euo pipefail  # 严格模式，防止错误传播
+          
+          # 1. 提取原始版本
           RAW_VERSION=$(grep '^VERSION_NUMBER:=' include/version.mk | head -1 | cut -d= -f2 | xargs)
           echo "原始版本: $RAW_VERSION"
-          
-          # 清理版本号
+
+          # 2. 清理版本号（保留数字和点）
           CLEAN_VERSION=$(echo "$RAW_VERSION" | sed 's/[^0-9.]//g')
           echo "清理后版本: $CLEAN_VERSION"
-          
-          # 验证版本格式
+
+          # 3. 验证格式（X.Y 或 X.Y.Z）
           if ! echo "$CLEAN_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
-            echo "❌ 无效的版本格式: $CLEAN_VERSION"
+            echo "❌ 错误：版本格式应为 X.Y 或 X.Y.Z"
             exit 1
           fi
-          
-          # 标准化版本格式
-          if echo "$CLEAN_VERSION" | grep -qE '^[0-9]+\.[0-9]+$'; then
-            FULLVERSION="v${CLEAN_VERSION}.0"
+
+          # 4. 标准化为 vX.Y.Z
+          if [ $(echo "$CLEAN_VERSION" | tr -cd '.' | wc -c) -eq 1 ]; then
+            FULLVERSION="v${CLEAN_VERSION}.0"  # 补全为 X.Y.0
           else
-            FULLVERSION="v${CLEAN_VERSION}"
+            FULLVERSION="v${CLEAN_VERSION}"    # 保持 X.Y.Z
           fi
-          
-          echo "最终版本: $FULLVERSION"
+
+          echo "✅ 最终版本: $FULLVERSION"
           echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
 
       - name: Debug version info
@@ -165,6 +167,7 @@ jobs:
             🎉 OpenWrt x86_64 ${{ steps.getversion.outputs.fullversion }}
             📅 构建时间：${{ steps.buildtime.outputs.time }}
             🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.get_latest_tag.outputs.latest_tag }}
+            🛠️ 构建日志：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
           makeLatest: true
           skipIfReleaseExists: true
