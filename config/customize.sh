@@ -21,6 +21,10 @@ sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/M
 # 创建 banner 文件目录
 mkdir -p files/etc
 
+# 先获取构建时间
+BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+# 写入 banner 文件，包含构建时间
 cat > files/etc/banner <<EOF
  __    __   __    __       ___   ____    __    ____  _______  __  
 |  |  |  | |  |  |  |     /   \  \   \  /  \  /   / |   ____||  | 
@@ -30,10 +34,11 @@ cat > files/etc/banner <<EOF
 |__|  |__|  \______/  /__/     \__\  \__/  \__/     |_______||__|                                                                 
 -----------------------------------------------------------------                                                                                          
 Welcome to HUA WEI Router!
-Build Date: $(date +"%Y-%m-%d %H:%M:%S")
+Build Date: $BUILD_DATE
 EOF
 
 echo "Custom banner has been set."
+
 
 # -------- 设置 DHCP 顺序分配和起始地址 --------
 
