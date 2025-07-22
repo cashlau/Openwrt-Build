@@ -35,7 +35,7 @@ EOF
 
 echo "Custom banner has been set."
 
-# -------- 设置 DHCP 顺序分配和起始地址为 .10 --------
+# -------- 设置 DHCP 顺序分配和起始地址 --------
 
 mkdir -p files/etc/uci-defaults
 
