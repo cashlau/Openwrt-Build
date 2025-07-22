@@ -1,4 +1,4 @@
-name: Test OpenWrt Version and Release
+name: Test OpenWrt Version and GitHub Release
 
 on:
   workflow_dispatch:
@@ -27,14 +27,14 @@ jobs:
           echo "fullversion=$FULLVERSION" >> $GITHUB_OUTPUT
 
       - name: Show extracted version
-        run: echo "Version is ${{ steps.getversion.outputs.fullversion }}"
+        run: echo "Extracted version is: ${{ steps.getversion.outputs.fullversion }}"
 
-      - name: Create GitHub Release (dry run)
+      - name: Create GitHub Release (Draft)
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.IGH_TOKEN }}
           tag: ${{ steps.getversion.outputs.fullversion }}
           name: Test Release ${{ steps.getversion.outputs.fullversion }}
-          body: "Test release for version ${{ steps.getversion.outputs.fullversion }}"
+          body: "This is a test draft release for OpenWrt version ${{ steps.getversion.outputs.fullversion }}"
           draft: true
-          prerelease: true
+          prerelease: false
