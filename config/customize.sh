@@ -3,8 +3,6 @@ set -e
 
 # -------- 修改默认配置 --------
 
-#!/bin/bash
-
 CONFIG_FILE="package/base-files/files/bin/config_generate"
 LUCIMK="feeds/luci/collections/luci/Makefile"
 
@@ -50,7 +48,6 @@ uci set dhcp.lan.limit='150'
 uci set dhcp.@dnsmasq[0].sequential_ip='1'
 uci commit dhcp
 EOF
-
 chmod +x files/etc/uci-defaults/99-dhcp-sequential
 
 echo "✅ DHCP 顺序配置写入完成"
