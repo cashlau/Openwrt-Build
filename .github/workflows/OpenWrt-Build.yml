@@ -68,6 +68,7 @@ jobs:
           else
             echo "✅ New version detected. Proceeding."
             echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build skipped notice
         if: steps.compare.outputs.should_build == 'false' && steps.check.outputs.cleanup_flag == 'false'
