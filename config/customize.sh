@@ -58,18 +58,21 @@ echo "✅ DHCP 顺序配置写入完成"
 
 # -------- 自动桥接 LAN 口及设置 WAN --------
 
+#!/bin/sh
+
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
 
 board_config_update
 
-case "$(board_name)" in
-*)
-    # 获取所有以 e 开头的物理网卡名（排除虚拟接口）
-    eth_ifaces=$(ip -o link show | awk -F': ' '{print $2}' | sed 's/ //g' | grep '^e' | grep -vE "(@|\.)")
+arch=$(uname -m)
 
-    count=$(echo "$eth_ifaces" | wc -l)
+# 获取所有以 e 开头的物理网卡名（排除虚拟接口）
+eth_ifaces=$(ip -o link show | awk -F': ' '{print $2}' | sed 's/ //g' | grep '^e' | grep -vE "(@|\.)")
+count=$(echo "$eth_ifaces" | wc -l)
 
+if echo "$arch" | grep -qiE 'x86_64|i[3-6]86|amd64'; then
+    # 针对 x86 架构的接口分配
     if [ "$count" -gt 2 ]; then
         wan_if="eth1"
         lan_if=$(echo "$eth_ifaces" | grep -v "^$wan_if$" | tr '\n' ' ' | sed 's/ $//')
@@ -78,20 +81,22 @@ case "$(board_name)" in
         ucidef_set_interfaces_lan_wan "eth0" "eth1"
         wan_if="eth1"
     fi
+else
+    # 非 x86 架构，保持原有逻辑
+    if [ "$count" -gt 2 ]; then
+        wan_if="eth1"
+        lan_if=$(echo "$eth_ifaces" | grep -v "^$wan_if$" | tr '\n' ' ' | sed 's/ $//')
+        ucidef_set_interfaces_lan_wan "$lan_if" "$wan_if"
+    else
+        ucidef_set_interfaces_lan_wan "eth0" "eth1"
+        wan_if="eth1"
+    fi
+fi
 
-    # 设置 WAN 为 PPPoE 拨号
-    uci set network.wan.proto='pppoe'
-    uci commit network
-    ;;
-esac
+# 设置 WAN 为 PPPoE 拨号
+uci set network.wan.proto='pppoe'
+uci commit network
 
 board_config_flush
 
 exit 0
-
-EOF
-
-chmod +x files/etc/board.d/99-default_network
-
-echo "✅ 自动网口识别脚本写入完成"
-echo "全部操作完成！"
