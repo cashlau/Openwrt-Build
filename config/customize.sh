@@ -67,12 +67,10 @@ board_config_update
 
 arch=$(uname -m)
 
-# 获取所有以 e 开头的物理网卡名（排除虚拟接口）
 eth_ifaces=$(ip -o link show | awk -F': ' '{print $2}' | sed 's/ //g' | grep '^e' | grep -vE "(@|\.)")
 count=$(echo "$eth_ifaces" | wc -l)
 
 if echo "$arch" | grep -qiE 'x86_64|i[3-6]86|amd64'; then
-    # 针对 x86 架构的接口分配
     if [ "$count" -gt 2 ]; then
         wan_if="eth1"
         lan_if=$(echo "$eth_ifaces" | grep -v "^$wan_if$" | tr '\n' ' ' | sed 's/ $//')
@@ -82,7 +80,6 @@ if echo "$arch" | grep -qiE 'x86_64|i[3-6]86|amd64'; then
         wan_if="eth1"
     fi
 else
-    # 非 x86 架构，保持原有逻辑
     if [ "$count" -gt 2 ]; then
         wan_if="eth1"
         lan_if=$(echo "$eth_ifaces" | grep -v "^$wan_if$" | tr '\n' ' ' | sed 's/ $//')
@@ -100,3 +97,9 @@ uci commit network
 board_config_flush
 
 exit 0
+EOF
+
+chmod +x files/etc/board.d/99-default_network
+
+echo "✅ 自动网口识别脚本写入完成"
+echo "全部操作完成！"
