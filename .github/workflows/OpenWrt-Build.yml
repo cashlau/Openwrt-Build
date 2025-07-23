@@ -80,6 +80,13 @@ jobs:
         run: |
           git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
 
+      - name: Update and install feeds
+        if: steps.compare.outputs.should_build == 'true'
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          
       - name: Prepare openwrt/scripts directory
         if: steps.compare.outputs.should_build == 'true'
         run: mkdir -p openwrt/scripts
