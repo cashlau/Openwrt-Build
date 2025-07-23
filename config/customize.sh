@@ -3,17 +3,18 @@ set -e
 
 # -------- 修改默认配置 --------
 
+#!/bin/bash
+
 CONFIG_FILE="package/base-files/files/bin/config_generate"
 LUCIMK="feeds/luci/collections/luci/Makefile"
 
 sed -i "s/192.168.1.1/192.168.50.2/g" "$CONFIG_FILE"
-sed -i "s/hostname='OpenWrt'/hostname='HUAWEI'/g" "$CONFIG_FILE"
-sed -i "s/set system.@system\[-1\].timezone='[^']*'/set system.@system[-1].timezone='CST-8'/" "$CONFIG_FILE"
-sed -i "/set system.@system\[-1\].zonename/d" "$CONFIG_FILE"
-sed -i "/set system.@system[-1].timezone=/a set system.@system[-1].zonename='Asia/Taipei'" "$CONFIG_FILE"
+sed -i "s/set system.@system\[-1\].hostname='OpenWrt'/set system.@system[-1].hostname='HUAWEI'/" "$CONFIG_FILE"
+sed -i "s/set system.@system\[-1\].timezone='UTC'/set system.@system[-1].timezone='CST-8'/" "$CONFIG_FILE"
+grep -q "set system.@system\[-1\].zonename=" "$CONFIG_FILE" || \
+  sed -i "/set system.@system\[-1\].timezone='CST-8'/a\		set system.@system[-1].zonename='Asia/Taipei'" "$CONFIG_FILE"
 sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' "$LUCIMK"
-
-echo "✅ 修改默认配置完成"
+echo "✅ 默认配置修改完成"
 
 
 # -------- 修改登录 banner --------
