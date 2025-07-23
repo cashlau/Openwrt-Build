@@ -82,41 +82,42 @@ echo "DHCP 顺序分配设置已完成（起始地址 .10）"
 cat > files/etc/uci-defaults/99-auto-network <<'EOF'
 #!/bin/sh
 
-# 固定 WAN 接口
 wan_if="eth1"
 
-# 自动收集所有非 WAN 接口作为 LAN
+# 收集所有以 eth 开头且不是 wan_if 的接口
 lan_ports=""
-for iface in $(ls /sys/class/net | grep -E '^eth'); do
+for iface in $(ls /sys/class/net | grep '^eth'); do
   [ "$iface" != "$wan_if" ] && lan_ports="$lan_ports $iface"
 done
 
-# 清除默认配置
+# 删除旧的 lan/wans 配置
 uci -q delete network.lan
 uci -q delete network.wan
 uci -q delete network.wan6
 
-# 清除 br-lan 相关 device 段
-for section in $(uci show network | grep "=device" | cut -d. -f2); do
-  [ "$(uci get network.$section.name 2>/dev/null)" = "br-lan" ] && uci delete network.$section
+# 删除旧的 br-lan 设备配置（防止重复）
+for dev in $(uci show network | grep "=device" | cut -d. -f2); do
+  [ "$(uci get network.$dev.name 2>/dev/null)" = "br-lan" ] && uci delete network.$dev
 done
 
-# 创建 br-lan 桥设备
+# 新建桥接设备 br-lan
 uci set network.br_lan=device
 uci set network.br_lan.type='bridge'
 uci set network.br_lan.name='br-lan'
+
+# 添加所有 lan_ports 到 br-lan 的 ports 列表
 for port in $lan_ports; do
   uci add_list network.br_lan.ports="$port"
 done
 
-# 设置 LAN 接口
+# 配置 LAN 接口绑定到 br-lan
 uci set network.lan=interface
 uci set network.lan.device='br-lan'
 uci set network.lan.proto='static'
 uci set network.lan.ipaddr='192.168.50.2'
 uci set network.lan.netmask='255.255.255.0'
 
-# 设置 WAN 接口（默认 PPPoE，可改 dhcp）
+# 配置 WAN 接口（pppoe）
 uci set network.wan=interface
 uci set network.wan.device="$wan_if"
 uci set network.wan.proto='pppoe'
@@ -124,16 +125,12 @@ uci set network.wan.username=''
 uci set network.wan.password=''
 uci set network.wan.ipv6='0'
 
-# 设置 WAN6（IPv6）
+# 配置 WAN6（dhcpv6）
 uci set network.wan6=interface
 uci set network.wan6.device="$wan_if"
 uci set network.wan6.proto='dhcpv6'
 
-# 保存并应用
+# 提交配置
 uci commit network
+
 exit 0
-EOF
-
-chmod +x files/etc/uci-defaults/99-auto-network
-
-echo "✅ 自动网络配置脚本已生成，记得修改 PPPoE 用户名和密码！"
