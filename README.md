@@ -6,8 +6,10 @@
 
 ### 主要功能
 
-- 自动拉取最新稳定版源码  
-- 集成自定义插件（见 `scripts/ext_packages.sh`），包括：  
+- 自动拉取官方最新稳定版源码  
+- 默认采用 **PPPoE 拨号方式连接网络**  
+- 支持 **Intel X710 万兆光网卡**（已集成驱动）  
+- 集成自定义插件（见 `scripts/ext_packages.sh`），默认包括：  
   - **Passwall**（科学上网代理工具，支持透明代理）  
   - **MosDNS**（智能DNS解析，屏蔽广告和劫持）  
   - **全能推送**（微信、Telegram等多平台消息通知）  
@@ -20,8 +22,8 @@
 ### 使用方法
 
 - 浏览器访问后台：http://192.168.50.2  
-- 默认用户名：`root`，首次登录请设置密码  
-- 下载固件：[Releases](https://github.com/cashlau/Openwrt-Build/releases)  
+- 默认用户名，首次登录请设置密码  
+- 下载固件：(https://github.com/cashlau/Openwrt-Build/releases)  
 
 ---
 
@@ -30,6 +32,8 @@
 
 - 插件可能增大固件体积，编译时间较长  
 - 推荐有线连接访问后台，保证稳定  
+- 固件默认使用 PPPoE 拨号，需在后台设置账户密码  
+- 已适配部分 Intel 光网卡（如 X710），其他型号请自行测试  
 - 请保持固件和配置同步更新  
 
 ---
