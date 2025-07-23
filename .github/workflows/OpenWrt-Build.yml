@@ -33,20 +33,25 @@ jobs:
         id: compare
         run: |
           LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
+          LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
+
           echo "Last built version: $LAST_VER"
-          echo "Latest upstream version: ${{ steps.get_latest_tag.outputs.latest_tag }}"
-          if [ "$LAST_VER" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
-            echo "No new version detected. Skipping build."
-            exit 78
+          echo "Latest upstream version: $LATEST_TAG"
+
+          if [ "$LAST_VER" = "$LATEST_TAG" ]; then
+            echo "❎ No new version detected. Skipping build."
+            echo "should_build=false" >> $GITHUB_OUTPUT
           else
-            echo "New version detected. Proceeding."
+            echo "✅ New version detected. Proceeding."
+            echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Clone OpenWrt source
-        run: |
-          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
+      - name: Build skipped notice
+        if: steps.compare.outputs.should_build == 'false'
+        run: echo "🚫 No build performed because there's no new version."
 
       - name: Free up disk space
+        if: steps.compare.outputs.should_build == 'true'
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
@@ -57,9 +62,11 @@ jobs:
           swap-storage: true
 
       - name: Show available disk space
+        if: steps.compare.outputs.should_build == 'true'
         run: df -h
 
       - name: Install dependencies
+        if: steps.compare.outputs.should_build == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -68,16 +75,17 @@ jobs:
             gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
-      - name: Update all feeds
+      - name: Clone OpenWrt source
+        if: steps.compare.outputs.should_build == 'true'
         run: |
-          cd openwrt
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          git clone --depth=1 --branch "${{ steps.get_latest_tag.outputs.latest_tag }}" https://github.com/openwrt/openwrt.git
 
       - name: Prepare openwrt/scripts directory
+        if: steps.compare.outputs.should_build == 'true'
         run: mkdir -p openwrt/scripts
 
       - name: Copy config and scripts
+        if: steps.compare.outputs.should_build == 'true'
         run: |
           cp config/.config openwrt/.config
           cp config/customize.sh openwrt/
@@ -85,9 +93,11 @@ jobs:
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
 
       - name: List openwrt/scripts contents
+        if: steps.compare.outputs.should_build == 'true'
         run: ls -l openwrt/scripts
 
       - name: Run ext_packages.sh if present
+        if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
@@ -99,27 +109,32 @@ jobs:
           fi
 
       - name: Run customize.sh
+        if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           chmod +x customize.sh
           ./customize.sh
 
       - name: Make defconfig and download sources
+        if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           make defconfig
           make download -j8
 
       - name: Build OpenWrt x86_64
+        if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           make -j$(nproc) || make -j1 V=s
 
       - name: Get build time
+        if: steps.compare.outputs.should_build == 'true'
         id: buildtime
         run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and upload firmware
+        if: steps.compare.outputs.should_build == 'true'
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.IGH_TOKEN }}
@@ -134,10 +149,12 @@ jobs:
           skipIfReleaseExists: true
 
       - name: Save latest built version to file
+        if: steps.compare.outputs.should_build == 'true'
         run: echo "${{ steps.get_latest_tag.outputs.latest_tag }}" > last_build_version.txt
 
       - name: Save last built version cache
+        if: steps.compare.outputs.should_build == 'true'
         uses: actions/cache@v3
         with:
           path: last_build_version.txt
-          key: last-build-version-cache-${{ steps.get_latest_tag.outputs.latest_tag }}
+          key: last-build-version-cache
