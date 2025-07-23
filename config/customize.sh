@@ -58,6 +58,8 @@ echo "✅ DHCP 顺序配置写入完成"
 
 # -------- 自动桥接 LAN 口及设置 WAN --------
 
+mkdir -p files/etc/board.d
+cat > files/etc/board.d/99-default_network <<'EOF'
 #!/bin/sh
 
 . /lib/functions/system.sh
@@ -66,7 +68,6 @@ echo "✅ DHCP 顺序配置写入完成"
 board_config_update
 
 arch=$(uname -m)
-
 eth_ifaces=$(ip -o link show | awk -F': ' '{print $2}' | sed 's/ //g' | grep '^e' | grep -vE "(@|\.)")
 count=$(echo "$eth_ifaces" | wc -l)
 
@@ -90,7 +91,6 @@ else
     fi
 fi
 
-# 设置 WAN 为 PPPoE 拨号
 uci set network.wan.proto='pppoe'
 uci commit network
 
@@ -98,8 +98,7 @@ board_config_flush
 
 exit 0
 EOF
-
 chmod +x files/etc/board.d/99-default_network
-
 echo "✅ 自动网口识别脚本写入完成"
+
 echo "全部操作完成！"
