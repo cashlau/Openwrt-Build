@@ -1,45 +1,21 @@
-name: OpenWrt Build or Cleanup
+name: OpenWrt x86_64
 
 on:
-  schedule:
-    - cron: '0 2 * * *'  # 每天凌晨 2 点自动运行
   workflow_dispatch:
-    inputs:
-      cleanup:
-        description: '是否只清理，不构建'
-        required: false
-        default: 'false'
+  schedule:
+    - cron: '0 2 * * *'  # 每天凌晨2点自动触发
 
 jobs:
-  job:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # 读取 cleanup 输入参数，存入输出变量 cleanup_flag
-      - name: Check if cleanup is requested
-        id: check
-        run: echo "cleanup_flag=${{ github.event.inputs.cleanup || 'false' }}" >> $GITHUB_OUTPUT
-
-      # **无条件清理所有旧 workflow runs**
-      - name: Cleanup old workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          retain_days: 1
-          keep_minimum_runs: 2
-
-      # 如果 cleanup_flag 为 false，则继续构建
-      - name: Checkout repository
-        if: steps.check.outputs.cleanup_flag == 'false'
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Install jq
-        if: steps.check.outputs.cleanup_flag == 'false'
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Restore last built version cache
-        if: steps.check.outputs.cleanup_flag == 'false'
         id: cache-version
         uses: actions/cache@v3
         with:
@@ -48,14 +24,12 @@ jobs:
           restore-keys: last-build-version-cache
 
       - name: Get latest OpenWrt stable release tag
-        if: steps.check.outputs.cleanup_flag == 'false'
         id: get_latest_tag
         run: |
           TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
           echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Compare versions
-        if: steps.check.outputs.cleanup_flag == 'false'
         id: compare
         run: |
           LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
@@ -73,10 +47,9 @@ jobs:
           fi
 
       - name: Build skipped notice
-        if: steps.compare.outputs.should_build == 'false' && steps.check.outputs.cleanup_flag == 'false'
+        if: steps.compare.outputs.should_build == 'false'
         run: echo "🚫 No build performed because there's no new version."
 
-      # 下面所有步骤仅在 should_build 为 true 且不是 cleanup 时执行：
       - name: Free up disk space
         if: steps.compare.outputs.should_build == 'true'
         uses: jlumbroso/free-disk-space@main
@@ -113,7 +86,7 @@ jobs:
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-
+          
       - name: Prepare openwrt/scripts directory
         if: steps.compare.outputs.should_build == 'true'
         run: mkdir -p openwrt/scripts
