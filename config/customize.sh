@@ -61,3 +61,55 @@ EOF
 
 chmod +x files/etc/uci-defaults/99-dhcp-sequential
 echo "DHCP 顺序分配设置已完成（起始地址 .10）"
+
+
+# -------- 自动桥接 LAN 口及设置 WAN PPPoE --------
+
+cat > files/etc/uci-defaults/98-network-auto-bridge <<'EOS'
+#!/bin/sh
+
+wan_if="eth1"
+
+lan_ports=""
+for iface in $(ls /sys/class/net | grep -v -e lo -e "$wan_if"); do
+  lan_ports="$lan_ports $iface"
+done
+
+echo "WAN接口: $wan_if"
+echo "LAN桥接口: $lan_ports"
+
+uci batch <<-EOF
+delete network.lan
+delete network.br_lan
+delete network.wan
+delete network.wan6
+
+set network.br_lan=device
+set network.br_lan.name='br-lan'
+set network.br_lan.type='bridge'
+EOF
+
+for p in $lan_ports; do
+  uci add_list network.br_lan.ports="$p"
+done
+
+uci batch <<-EOF
+set network.lan=interface
+set network.lan.device='br-lan'
+set network.lan.proto='static'
+
+set network.wan=interface
+set network.wan.device='$wan_if'
+set network.wan.proto='pppoe'
+set network.wan.ipv6='0'
+
+set network.wan6=interface
+set network.wan6.device='$wan_if'
+set network.wan6.proto='dhcpv6'
+
+commit network
+EOF
+EOS
+
+chmod +x files/etc/uci-defaults/98-network-auto-bridge
+echo "✅ 自动桥接 LAN 口及 WAN PPPoE 配置已设置"
