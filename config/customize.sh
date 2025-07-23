@@ -120,8 +120,8 @@ uci set network.lan.netmask='255.255.255.0'
 uci set network.wan=interface
 uci set network.wan.device="$wan_if"
 uci set network.wan.proto='pppoe'
-uci set network.wan.username='your_pppoe_user'
-uci set network.wan.password='your_pppoe_pass'
+uci set network.wan.username=''
+uci set network.wan.password=''
 uci set network.wan.ipv6='0'
 
 # 设置 WAN6（IPv6）
