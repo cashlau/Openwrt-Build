@@ -18,7 +18,6 @@ echo "✅ 修改默认配置完成"
 
 # -------- 修改登录 banner --------
 
-
 mkdir -p files/etc
 BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 cat <<'EOT' > files/etc/banner
@@ -37,7 +36,6 @@ EOT
 sed -i "s|__BUILD_DATE__|$BUILD_DATE|g" files/etc/banner
 
 echo "✅ Custom banner has been set."
-
 
 
 # -------- DHCP 顺序分配 --------
@@ -70,17 +68,18 @@ cat > files/etc/board.d/99-default_network <<'EOF'
 board_config_update
 
 case "$(board_name)" in
-x86_64|x86)
-    count=$(ip -o link show | grep -c '^.*: eth[0-9]')
+*)
+    eth_ifaces=$(ip -o link show | awk -F': ' '{print $2}' | sed 's/ //g' | grep '^e' | grep -vE "(@|\.)")
+
+    count=$(echo "$eth_ifaces" | wc -l)
+
     if [ "$count" -gt 2 ]; then
         wan_if="eth1"
-        lan_if=$(ip -o link show | awk -F': ' '{print $2}' | grep '^eth' | grep -v "$wan_if" | tr '\n' ' ')
+        lan_if=$(echo "$eth_ifaces" | grep -v "^$wan_if$" | tr '\n' ' ' | sed 's/ $//')
         ucidef_set_interfaces_lan_wan "$lan_if" "$wan_if"
     else
         ucidef_set_interfaces_lan_wan "eth0" "eth1"
     fi
-    ;;
-*)
     ;;
 esac
 
@@ -92,5 +91,4 @@ EOF
 chmod +x files/etc/board.d/99-default_network
 
 echo "✅ 自动网口识别脚本写入完成"
-
 echo "全部操作完成！"
