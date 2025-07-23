@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       cleanup:
-        description: 'Run cleanup instead of build'
+        description: '是否只清理，不构建'
         required: false
         default: 'false'
 
@@ -15,12 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 读取 cleanup 输入参数，存入输出变量 cleanup_flag
       - name: Check if cleanup is requested
         id: check
         run: echo "cleanup_flag=${{ github.event.inputs.cleanup || 'false' }}" >> $GITHUB_OUTPUT
 
+      # **无条件清理所有旧 workflow runs**
       - name: Cleanup old workflow runs
-        if: steps.check.outputs.cleanup_flag == 'true'
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -28,6 +29,7 @@ jobs:
           retain_days: 1
           keep_minimum_runs: 2
 
+      # 如果 cleanup_flag 为 false，则继续构建
       - name: Checkout repository
         if: steps.check.outputs.cleanup_flag == 'false'
         uses: actions/checkout@v3
