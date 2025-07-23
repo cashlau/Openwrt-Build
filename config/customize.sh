@@ -1,20 +1,34 @@
 #!/bin/bash
 set -e
 
-# 如果源码根目录就是 openwrt ，根据情况解除下面注释
-# cd openwrt
+CONFIG_FILE="package/base-files/files/bin/config_generate"
+LUCIMK="feeds/luci/collections/luci/Makefile"
 
-# 修改默认 LAN IP（192.168.1.1 -> 192.168.50.2）
-sed -i 's/192.168.1.1/192.168.50.2/g' package/base-files/files/bin/config_generate
+# 1. 修改默认 LAN IP（192.168.1.1 -> 192.168.50.2）
+sed -i "s/192.168.1.1/192.168.50.2/g" "$CONFIG_FILE"
 
-# 设置时区为 Asia/Taipei
-sed -i "s/'UTC'/'Asia\/Taipei'/g" package/base-files/files/bin/config_generate
+# 2. 修改默认主机名（OpenWrt -> HUAWEI）
+sed -i "s/hostname='OpenWrt'/hostname='HUAWEI'/g" "$CONFIG_FILE"
 
-# 修改默认主机名为 HUAWEI
-sed -i "s/hostname='OpenWrt'/hostname='HUAWEI'/g" package/base-files/files/bin/config_generate
+# 3. 删除旧的 timezone 和 zonename 设置，防止重复
+sed -i "/set system.@system\[-1\].timezone/d" "$CONFIG_FILE"
+sed -i "/set system.@system\[-1\].zonename/d" "$CONFIG_FILE"
 
-# 修改默认主题为 argon，确保你已经拉取了 luci-theme-argon
-sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
+# 4. 在设置主机名的行后追加新的时区和时区名设置
+sed -i "/hostname='HUAWEI'/a \\
+uci set system.@system[-1].timezone='CST-8';\\
+uci set system.@system[-1].zonename='Asia/Taipei';" "$CONFIG_FILE"
+
+# 5. 修改默认主题为 argon，确保你已经拉取了 luci-theme-argon
+sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' "$LUCIMK"
+
+echo "✅ config_generate 已成功修改："
+echo "- LAN IP => 192.168.50.2"
+echo "- 主机名 => HUAWEI"
+echo "- 时区 => CST-8"
+echo "- 时区名 => Asia/Taipei"
+echo "- 默认主题 => luci-theme-argon"
+
 
 # -------- 修改登录 banner --------
 
@@ -65,51 +79,61 @@ echo "DHCP 顺序分配设置已完成（起始地址 .10）"
 
 # -------- 自动桥接 LAN 口及设置 WAN PPPoE --------
 
-cat > files/etc/uci-defaults/98-network-auto-bridge <<'EOS'
+cat > files/etc/uci-defaults/99-auto-network <<'EOF'
 #!/bin/sh
 
+# 固定 WAN 接口
 wan_if="eth1"
 
+# 自动收集所有非 WAN 接口作为 LAN
 lan_ports=""
-for iface in $(ls /sys/class/net | grep -v -e lo -e "$wan_if"); do
-  lan_ports="$lan_ports $iface"
+for iface in $(ls /sys/class/net | grep -E '^eth'); do
+  [ "$iface" != "$wan_if" ] && lan_ports="$lan_ports $iface"
 done
 
-echo "WAN接口: $wan_if"
-echo "LAN桥接口: $lan_ports"
+# 清除默认配置
+uci -q delete network.lan
+uci -q delete network.wan
+uci -q delete network.wan6
 
-uci batch <<-EOF
-delete network.lan
-delete network.br_lan
-delete network.wan
-delete network.wan6
-
-set network.br_lan=device
-set network.br_lan.name='br-lan'
-set network.br_lan.type='bridge'
-EOF
-
-for p in $lan_ports; do
-  uci add_list network.br_lan.ports="$p"
+# 清除 br-lan 相关 device 段
+for section in $(uci show network | grep "=device" | cut -d. -f2); do
+  [ "$(uci get network.$section.name 2>/dev/null)" = "br-lan" ] && uci delete network.$section
 done
 
-uci batch <<-EOF
-set network.lan=interface
-set network.lan.device='br-lan'
-set network.lan.proto='static'
+# 创建 br-lan 桥设备
+uci set network.br_lan=device
+uci set network.br_lan.type='bridge'
+uci set network.br_lan.name='br-lan'
+for port in $lan_ports; do
+  uci add_list network.br_lan.ports="$port"
+done
 
-set network.wan=interface
-set network.wan.device='$wan_if'
-set network.wan.proto='pppoe'
-set network.wan.ipv6='0'
+# 设置 LAN 接口
+uci set network.lan=interface
+uci set network.lan.device='br-lan'
+uci set network.lan.proto='static'
+uci set network.lan.ipaddr='192.168.50.2'
+uci set network.lan.netmask='255.255.255.0'
 
-set network.wan6=interface
-set network.wan6.device='$wan_if'
-set network.wan6.proto='dhcpv6'
+# 设置 WAN 接口（默认 PPPoE，可改 dhcp）
+uci set network.wan=interface
+uci set network.wan.device="$wan_if"
+uci set network.wan.proto='pppoe'
+uci set network.wan.username='your_pppoe_user'
+uci set network.wan.password='your_pppoe_pass'
+uci set network.wan.ipv6='0'
 
-commit network
+# 设置 WAN6（IPv6）
+uci set network.wan6=interface
+uci set network.wan6.device="$wan_if"
+uci set network.wan6.proto='dhcpv6'
+
+# 保存并应用
+uci commit network
+exit 0
 EOF
-EOS
 
-chmod +x files/etc/uci-defaults/98-network-auto-bridge
-echo "✅ 自动桥接 LAN 口及 WAN PPPoE 配置已设置"
+chmod +x files/etc/uci-defaults/99-auto-network
+
+echo "✅ 自动网络配置脚本已生成，记得修改 PPPoE 用户名和密码！"
