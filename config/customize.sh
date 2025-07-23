@@ -10,16 +10,16 @@ sed -i "s/192.168.1.1/192.168.50.2/g" "$CONFIG_FILE"
 # 2. 修改默认主机名（OpenWrt -> HUAWEI）
 sed -i "s/hostname='OpenWrt'/hostname='HUAWEI'/g" "$CONFIG_FILE"
 
-# 3. 删除旧的 timezone 和 zonename 设置，防止重复
-sed -i "/set system.@system\[-1\].timezone/d" "$CONFIG_FILE"
+# 3. 替换已有 timezone 行的值为 CST-8
+sed -i "s/set system.@system\[-1\].timezone='[^']*'/set system.@system[-1].timezone='CST-8'/" "$CONFIG_FILE"
+
+# 4. 删除已有 zonename 行，防止重复添加
 sed -i "/set system.@system\[-1\].zonename/d" "$CONFIG_FILE"
 
-# 4. 在设置主机名的行后追加新的时区和时区名设置
-sed -i "/hostname='HUAWEI'/a \\
-uci set system.@system[-1].timezone='CST-8';\\
-uci set system.@system[-1].zonename='Asia/Taipei';" "$CONFIG_FILE"
+# 5. 在 timezone 行后追加 zonename 行
+sed -i "/set system.@system[-1].timezone=/a set system.@system[-1].zonename='Asia/Taipei'" "$CONFIG_FILE"
 
-# 5. 修改默认主题为 argon，确保你已经拉取了 luci-theme-argon
+# 6. 修改默认主题为 argon，确保你已经拉取了 luci-theme-argon
 sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' "$LUCIMK"
 
 echo "✅ config_generate 已成功修改："
@@ -28,6 +28,7 @@ echo "- 主机名 => HUAWEI"
 echo "- 时区 => CST-8"
 echo "- 时区名 => Asia/Taipei"
 echo "- 默认主题 => luci-theme-argon"
+
 
 
 # -------- 修改登录 banner --------
