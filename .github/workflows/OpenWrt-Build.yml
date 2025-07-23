@@ -129,7 +129,6 @@ jobs:
             🎉 OpenWrt x86_64 ${{ steps.get_latest_tag.outputs.latest_tag }}
             📅 构建时间：${{ steps.buildtime.outputs.time }}
             🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.get_latest_tag.outputs.latest_tag }}
-            🛠️ 构建日志：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
           makeLatest: true
           skipIfReleaseExists: true
