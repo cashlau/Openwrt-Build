@@ -3,7 +3,7 @@ name: OpenWrt x86_64
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点自动触发
+    - cron: '0 18 1,15 * *'  # 每天凌晨2点自动触发
 
 jobs:
   build:
