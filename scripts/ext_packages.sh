@@ -11,6 +11,7 @@ declare -A EXT_PACKAGES_NAME=(
   [6]="passwall-packages"
   [7]="mosdns"
   [8]="nikki"
+  [9]="luci-app-netspeedtest"
 )
 
 declare -A EXT_PACKAGES_PATH=(
@@ -22,6 +23,7 @@ declare -A EXT_PACKAGES_PATH=(
   [6]="package/passwall-packages"
   [7]="package/mosdns"
   [8]="package/OpenWrt-nikki"
+  [9]="package/luci-app-netspeedtest"
 )
 
 declare -A EXT_PACKAGES_REPOSITORY=(
@@ -33,6 +35,7 @@ declare -A EXT_PACKAGES_REPOSITORY=(
   [6]="https://github.com/xiaorouji/openwrt-passwall-packages.git"
   [7]="https://github.com/sbwml/luci-app-mosdns"
   [8]="https://github.com/nikkinikki-org/OpenWrt-nikki.git"
+  [9]="https://github.com/muink/luci-app-netspeedtest.git"
 )
 
 declare -A EXT_PACKAGES_BRANCH=(
@@ -44,6 +47,7 @@ declare -A EXT_PACKAGES_BRANCH=(
   [6]=""
   [7]="v5"
   [8]="main"
+  [9]="main"
 )
 
 for i in "${!EXT_PACKAGES_NAME[@]}"; do
