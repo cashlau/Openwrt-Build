@@ -47,7 +47,7 @@ declare -A EXT_PACKAGES_BRANCH=(
   [6]=""
   [7]="v5"
   [8]="main"
-  [9]="main"
+  [9]="master"
 )
 
 for i in "${!EXT_PACKAGES_NAME[@]}"; do
