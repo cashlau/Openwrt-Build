@@ -6,7 +6,7 @@ set -e
 CONFIG_FILE="package/base-files/files/bin/config_generate"
 LUCIMK="feeds/luci/collections/luci/Makefile"
 
-sed -i "s/192.168.1.1/192.168.50.2/g" "$CONFIG_FILE"
+sed -i "s/192.168.1.1/192.168.50.1/g" "$CONFIG_FILE"
 sed -i "s/set system.@system\[-1\].hostname='OpenWrt'/set system.@system[-1].hostname='HUAWEI'/" "$CONFIG_FILE"
 sed -i "s/set system.@system\[-1\].timezone='UTC'/set system.@system[-1].timezone='CST-8'/" "$CONFIG_FILE"
 grep -q "set system.@system\[-1\].zonename=" "$CONFIG_FILE" || \
