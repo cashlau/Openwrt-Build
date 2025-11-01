@@ -75,6 +75,17 @@ jobs:
             gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
+      # 🆕 新增：安装 Go 1.25
+      - name: Set up Go 1.25
+        if: steps.compare.outputs.should_build == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Verify Go version
+        if: steps.compare.outputs.should_build == 'true'
+        run: go version
+
       - name: Clone OpenWrt source
         if: steps.compare.outputs.should_build == 'true'
         run: |
