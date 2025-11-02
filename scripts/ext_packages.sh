@@ -78,7 +78,7 @@ done
 # ===============================
 # 替换 Go 工具链（mosdns v5 必须）
 # ===============================
-echo ">>> Replacing golang with sbwml Go 1.24.x"
+echo ">>> Replacing golang with sbwml Go 1.25.x"
 rm -rf feeds/packages/lang/golang
 git clone --depth=1 -b 25.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
