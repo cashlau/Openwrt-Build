@@ -48,7 +48,7 @@ declare -A EXT_PACKAGES_BRANCH=(
   [4]=""
   [5]=""
   [6]=""
-  [7]="v5"
+  [7]="v5"      # ✅ luci-app-mosdns 最新版本分支
   [8]="main"
   [9]="master"
 )
@@ -76,53 +76,53 @@ for i in "${!EXT_PACKAGES_NAME[@]}"; do
 done
 
 # ===============================
+# 替换 Go 工具链（mosdns v5 必须）
+# ===============================
+echo ">>> Replacing golang with sbwml Go 1.24.x"
+rm -rf feeds/packages/lang/golang
+git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
+
+# ===============================
 # 更新 feeds 并安装所有软件包
 # ===============================
 ./scripts/feeds update -a
 ./scripts/feeds install -a
 
 # ===============================
-# 移除 openwrt feeds 自带的核心库
-# 并强制使用官方 passwall-packages 源
+# 移除 OpenWrt 自带旧核心库
 # ===============================
 rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls}
 
-# 强制覆盖旧的 passwall-packages
-if [ -d "package/passwall-packages" ]; then
-  echo "Removing existing package/passwall-packages ..."
-  rm -rf package/passwall-packages
-fi
-
-echo "Cloning latest xiaorouji/openwrt-passwall-packages ..."
+# ===============================
+# 强制覆盖 passwall 相关
+# ===============================
+rm -rf package/passwall-packages
 git clone --depth=1 https://github.com/xiaorouji/openwrt-passwall-packages.git package/passwall-packages
 
-# ===============================
-# 移除 feeds 旧版 luci-passwall
-# ===============================
 rm -rf feeds/luci/applications/luci-app-passwall
-git clone https://github.com/xiaorouji/openwrt-passwall package/passwall-luci
+git clone --depth=1 https://github.com/xiaorouji/openwrt-passwall.git package/passwall-luci
 
 # ===============================
-# 自动启用这些包的编译选项
+# 启用编译选项
 # ===============================
 CONFIG_FILE=".config"
 
 for i in "${!EXT_PACKAGES_NAME[@]}"; do
   PKG="CONFIG_PACKAGE_${EXT_PACKAGES_NAME[$i]}=y"
-  if grep -q "^${PKG}$" "$CONFIG_FILE"; then
-    echo "$PKG already enabled"
-  else
+  if ! grep -q "^${PKG}$" "$CONFIG_FILE"; then
     echo "$PKG" >> "$CONFIG_FILE"
     echo "Enabled $PKG"
+  else
+    echo "$PKG already enabled"
   fi
 done
 
-# 强制启用 mosdns 与 v2ray-geodata
+# 强制启用核心依赖
 grep -q "^CONFIG_PACKAGE_mosdns=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_v2ray-geodata=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
 
 # ===============================
-# 生成最终配置
+# 生成配置
 # ===============================
 make defconfig
 
