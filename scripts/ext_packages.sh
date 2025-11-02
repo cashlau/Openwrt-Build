@@ -2,6 +2,9 @@
 set -e
 set -x  # 打开调试输出，方便日志跟踪
 
+# ===============================
+# 外部扩展包配置
+# ===============================
 declare -A EXT_PACKAGES_NAME=(
   [1]="luci-app-usb-printer"
   [2]="luci-app-argon-config"
@@ -50,6 +53,9 @@ declare -A EXT_PACKAGES_BRANCH=(
   [9]="master"
 )
 
+# ===============================
+# 克隆外部包
+# ===============================
 for i in "${!EXT_PACKAGES_NAME[@]}"; do
   pkg_name="${EXT_PACKAGES_NAME[$i]}"
   pkg_path="${EXT_PACKAGES_PATH[$i]}"
@@ -69,26 +75,36 @@ for i in "${!EXT_PACKAGES_NAME[@]}"; do
   fi
 done
 
-# 额外替换golang和v2ray-geodata包
-#rm -rf feeds/packages/lang/golang
-#git clone --depth=1 https://github.com/sbwml/packages_lang_golang -b 24.x feeds/packages/lang/golang
-
-#rm -rf feeds/packages/net/v2ray-geodata
-#git clone --depth=1 https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
-
+# ===============================
 # 更新 feeds 并安装所有软件包
+# ===============================
 ./scripts/feeds update -a
 ./scripts/feeds install -a
 
+# ===============================
 # 移除 openwrt feeds 自带的核心库
+# 并强制使用官方 passwall-packages 源
+# ===============================
 rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls}
-git clone https://github.com/xiaorouji/openwrt-passwall-packages package/passwall-packages
 
-# 移除 openwrt feeds 过时的luci版本
+# 强制覆盖旧的 passwall-packages
+if [ -d "package/passwall-packages" ]; then
+  echo "Removing existing package/passwall-packages ..."
+  rm -rf package/passwall-packages
+fi
+
+echo "Cloning latest xiaorouji/openwrt-passwall-packages ..."
+git clone --depth=1 https://github.com/xiaorouji/openwrt-passwall-packages.git package/passwall-packages
+
+# ===============================
+# 移除 feeds 旧版 luci-passwall
+# ===============================
 rm -rf feeds/luci/applications/luci-app-passwall
 git clone https://github.com/xiaorouji/openwrt-passwall package/passwall-luci
 
+# ===============================
 # 自动启用这些包的编译选项
+# ===============================
 CONFIG_FILE=".config"
 
 for i in "${!EXT_PACKAGES_NAME[@]}"; do
@@ -101,11 +117,13 @@ for i in "${!EXT_PACKAGES_NAME[@]}"; do
   fi
 done
 
-# 启用额外包的配置（保证mosdns和v2ray-geodata被启用）
+# 强制启用 mosdns 与 v2ray-geodata
 grep -q "^CONFIG_PACKAGE_mosdns=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_v2ray-geodata=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
 
-# 运行 make defconfig 让配置生效
+# ===============================
+# 生成最终配置
+# ===============================
 make defconfig
 
-echo "External packages setup complete."
+echo "✅ External packages setup complete."
