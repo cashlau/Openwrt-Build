@@ -80,7 +80,7 @@ done
 # ===============================
 echo ">>> Replacing golang with sbwml Go 1.24.x"
 rm -rf feeds/packages/lang/golang
-git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
+git clone --depth=1 -b 25.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # ===============================
 # 更新 feeds 并安装所有软件包
