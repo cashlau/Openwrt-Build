@@ -124,6 +124,7 @@ done
 # 强制启用核心依赖
 grep -q "^CONFIG_PACKAGE_mosdns=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_v2ray-geodata=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
+grep -q "^CONFIG_PACKAGE_luci-app-momo=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_luci-app-momo=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" >> "$CONFIG_FILE"
 
 # ===============================
