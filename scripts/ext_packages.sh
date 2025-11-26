@@ -15,7 +15,6 @@ declare -A EXT_PACKAGES_NAME=(
   [7]="mosdns"
   [8]="nikki"
   [9]="luci-app-netspeedtest"
-  [10]="momo"
 )
 
 declare -A EXT_PACKAGES_PATH=(
@@ -28,7 +27,6 @@ declare -A EXT_PACKAGES_PATH=(
   [7]="package/mosdns"
   [8]="package/OpenWrt-nikki"
   [9]="package/luci-app-netspeedtest"
-  [10]="package/momo"
 )
 
 declare -A EXT_PACKAGES_REPOSITORY=(
@@ -41,7 +39,6 @@ declare -A EXT_PACKAGES_REPOSITORY=(
   [7]="https://github.com/sbwml/luci-app-mosdns"
   [8]="https://github.com/nikkinikki-org/OpenWrt-nikki.git"
   [9]="https://github.com/muink/luci-app-netspeedtest.git"
-  [10]="https://github.com/nikkinikki-org/OpenWrt-momo.git"
 )
 
 declare -A EXT_PACKAGES_BRANCH=(
@@ -54,7 +51,6 @@ declare -A EXT_PACKAGES_BRANCH=(
   [7]="v5"      # ✅ luci-app-mosdns 最新版本分支
   [8]="main"
   [9]="master"
-  [10]="main"
 )
 
 # ===============================
@@ -124,8 +120,6 @@ done
 # 强制启用核心依赖
 grep -q "^CONFIG_PACKAGE_mosdns=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_v2ray-geodata=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
-grep -q "^CONFIG_PACKAGE_luci-app-momo=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_luci-app-momo=y" >> "$CONFIG_FILE"
-grep -q "^CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" >> "$CONFIG_FILE"
 
 # ===============================
 # 生成配置
