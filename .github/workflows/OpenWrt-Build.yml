@@ -86,18 +86,18 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: go version
 
-- name: Clone OpenWrt source
-  if: steps.compare.outputs.should_build == 'true'
-  run: |
-    TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
-    echo "Latest tag detected: $TAG"
+      - name: Clone OpenWrt source
+        if: steps.compare.outputs.should_build == 'true'
+        run: |
+          TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          echo "Latest tag detected: $TAG"
 
-    if [ -z "$TAG" ]; then
-      echo "❌ Upstream tag not detected. Possibly GitHub API rate limit. Stop build."
-      exit 1
-    fi
+          if [ -z "$TAG" ]; then
+            echo "❌ Upstream tag not detected. Possibly GitHub API rate limit. Stop build."
+            exit 1
+          fi
 
-    git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
+          git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
 
 
       - name: Update and install feeds
