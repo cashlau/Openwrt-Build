@@ -48,7 +48,7 @@ declare -A EXT_PACKAGES_BRANCH=(
   [4]=""
   [5]=""
   [6]=""
-  [7]="v5"      # mosdns v5
+  [7]="v5"
   [8]="main"
   [9]="master"
 )
@@ -76,7 +76,7 @@ for i in "${!EXT_PACKAGES_NAME[@]}"; do
 done
 
 # ===============================
-# Clone & split OpenWrt-momo（关键）
+# Clone & split OpenWrt-momo（最终修正版）
 # ===============================
 if [ ! -d "package/momo" ]; then
   echo ">>> Cloning OpenWrt-momo"
@@ -84,7 +84,13 @@ if [ ! -d "package/momo" ]; then
 
   mv package/OpenWrt-momo/momo package/momo
   mv package/OpenWrt-momo/luci-app-momo package/luci-app-momo
-  mv package/OpenWrt-momo/luci-i18n-momo-zh-cn package/luci-i18n-momo-zh-cn
+
+  # i18n 目录不是每个版本都有，存在才处理
+  if [ -d "package/OpenWrt-momo/luci-i18n-momo-zh-cn" ]; then
+    mv package/OpenWrt-momo/luci-i18n-momo-zh-cn package/luci-i18n-momo-zh-cn
+  else
+    echo ">>> luci-i18n-momo-zh-cn not found, skipping"
+  fi
 
   rm -rf package/OpenWrt-momo
 else
@@ -128,10 +134,14 @@ for i in "${!EXT_PACKAGES_NAME[@]}"; do
   grep -q "^${PKG}$" "$CONFIG_FILE" || echo "$PKG" >> "$CONFIG_FILE"
 done
 
-# 启用 momo
+# 启用 momo（安全写法）
 grep -q "^CONFIG_PACKAGE_momo=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_momo=y" >> "$CONFIG_FILE"
 grep -q "^CONFIG_PACKAGE_luci-app-momo=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_luci-app-momo=y" >> "$CONFIG_FILE"
-grep -q "^CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" >> "$CONFIG_FILE"
+
+if [ -d "package/luci-i18n-momo-zh-cn" ]; then
+  grep -q "^CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" "$CONFIG_FILE" \
+    || echo "CONFIG_PACKAGE_luci-i18n-momo-zh-cn=y" >> "$CONFIG_FILE"
+fi
 
 # 核心依赖
 grep -q "^CONFIG_PACKAGE_mosdns=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
@@ -142,4 +152,4 @@ grep -q "^CONFIG_PACKAGE_v2ray-geodata=y" "$CONFIG_FILE" || echo "CONFIG_PACKAGE
 # ===============================
 make defconfig
 
-echo "✅ All external packages + OpenWrt-momo setup complete."
+echo "✅ External packages + OpenWrt-momo setup complete."
