@@ -105,7 +105,10 @@ jobs:
         run: |
           cd openwrt
           ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          ./scripts/feeds install -a -p base
+          ./scripts/feeds install -a -p packages
+          ./scripts/feeds install -a -p luci
+          ./scripts/feeds install -a -p routing
           
       - name: Prepare openwrt/scripts directory
         if: steps.compare.outputs.should_build == 'true'
