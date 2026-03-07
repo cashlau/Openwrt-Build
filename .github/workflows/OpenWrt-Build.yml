@@ -156,12 +156,13 @@ jobs:
           cd openwrt
           ./customize.sh
 
+      # 隐藏源码下载时的海量刷屏日志
       - name: Make defconfig and download sources
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           make defconfig
-          make download -j8
+          make download -j8 > /dev/null 2>&1
 
       - name: Build OpenWrt x86_64
         if: steps.compare.outputs.should_build == 'true'
