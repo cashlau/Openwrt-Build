@@ -27,13 +27,10 @@ jobs:
         id: get_latest_tag
         run: |
           TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git | awk -F/ '{print $NF}' | grep -E '^v[0-9]' | grep -v 'rc' | sort -V | tail -n1)
-          
           if [ -z "$TAG" ]; then
             echo "❌ Failed to fetch latest tag. Stop build."
             exit 1
           fi
-          
-          echo "Detected latest stable tag: $TAG"
           echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Compare versions
@@ -41,15 +38,9 @@ jobs:
         run: |
           LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
           LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
-
-          echo "Last built version: $LAST_VER"
-          echo "Latest upstream version: $LATEST_TAG"
-
           if [ "$LAST_VER" = "$LATEST_TAG" ]; then
-            echo "❎ No new version detected. Skipping build."
             echo "should_build=false" >> $GITHUB_OUTPUT
           else
-            echo "✅ New version detected. Proceeding."
             echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
@@ -76,11 +67,7 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            python3 python3-setuptools python3-distutils-extra \
-            build-essential clang flex bison g++ gawk \
-            gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
-            rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
+          sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
       - name: Set up Go 1.25
         if: steps.compare.outputs.should_build == 'true'
@@ -97,29 +84,19 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: |
           TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
 
       - name: Apply custom feeds.conf.default
         if: steps.compare.outputs.should_build == 'true'
         run: |
           if [ -f config/feeds.conf.default ]; then
-            echo ">>> 开始智能合并 feeds 列表 <<<"
             while read -r line; do
               [[ -z "$line" || "$line" == \#* ]] && continue
-              
               feed_name=$(echo "$line" | awk '{print $2}')
-              
               if ! awk '{print $2}' openwrt/feeds.conf.default | grep -qx "$feed_name"; then
                 echo "$line" >> openwrt/feeds.conf.default
-                echo "✅ 新增自定义源: $feed_name"
-              else
-                echo "⏭️ 忽略重复源: $feed_name (保留官方默认)"
               fi
             done < config/feeds.conf.default
-            echo "✅ feeds 列表智能合并完成！"
-          else
-            echo "⚠️ 未找到 config/feeds.conf.default，将使用官方默认源"
           fi
 
       - name: Update feeds
@@ -143,30 +120,15 @@ jobs:
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
             ./scripts/ext_packages.sh
-          else
-            echo "❌ ext_packages.sh not found!"
-            exit 1
           fi
 
-      # 🚨 优化安装顺序：先装官方底座，再装 Passwall，彻底消灭 WARNING
       - name: Install feeds globally
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
-          
-          echo ">>> 刷新源索引，让系统知晓冲突包已被删除 <<<"
           ./scripts/feeds update -i
-          
-          echo ">>> 1. 先安装官方基础底座，提前备好 curl 等底层依赖 <<<"
-          ./scripts/feeds install -a -p packages || true
-          ./scripts/feeds install -a -p luci || true
-          ./scripts/feeds install -a -p routing || true
-          
-          echo ">>> 2. 强制优先从自定义源挂载 Passwall 等高级依赖 <<<"
           ./scripts/feeds install -a -f -p passwall_packages || true
           ./scripts/feeds install -a -f -p passwall_luci || true
-          
-          echo ">>> 3. 兜底全局安装剩余所有包 <<<"
           ./scripts/feeds install -a
 
       - name: Run customize.sh
