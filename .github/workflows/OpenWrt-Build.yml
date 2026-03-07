@@ -102,7 +102,7 @@ jobs:
           echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
 
-      # 🆕 新增：在更新 feeds 之前，应用你自定义的 feeds.conf.default
+      # 应用自定义的 feeds.conf.default
       - name: Apply custom feeds.conf.default
         if: steps.compare.outputs.should_build == 'true'
         run: |
@@ -113,49 +113,47 @@ jobs:
             echo "⚠️ 未找到 config/feeds.conf.default，将使用官方默认源"
           fi
 
-      - name: Update and install feeds
+      # 第一步：只更新源列表，此时不安装
+      - name: Update feeds
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           ./scripts/feeds update -a
-          ./scripts/feeds install -a -p base
-          ./scripts/feeds install -a -p packages
-          ./scripts/feeds install -a -p luci
-          ./scripts/feeds install -a -p routing
-          
-      - name: Prepare openwrt/scripts directory
-        if: steps.compare.outputs.should_build == 'true'
-        run: mkdir -p openwrt/scripts
 
-      - name: Copy config and scripts
+      # 第二步：提前拷贝脚本和配置文件，为运行 ext_packages.sh 准备
+      - name: Prepare scripts and config
         if: steps.compare.outputs.should_build == 'true'
         run: |
+          mkdir -p openwrt/scripts
           cp config/.config openwrt/.config
           cp config/customize.sh openwrt/
           cp -r scripts/. openwrt/scripts/
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
 
-      - name: List openwrt/scripts contents
-        if: steps.compare.outputs.should_build == 'true'
-        run: ls -l openwrt/scripts
-
+      # 第三步：执行 ext_packages.sh (在这里克隆包并删除冲突的核心)
       - name: Run ext_packages.sh if present
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           if [ -f scripts/ext_packages.sh ]; then
-            chmod +x scripts/ext_packages.sh
             ./scripts/ext_packages.sh
           else
             echo "❌ ext_packages.sh not found!"
             exit 1
           fi
 
+      # 第四步：全局安装所有源。由于此时冲突包已被删，安装会正确挂载 passwall 等包
+      - name: Install feeds globally
+        if: steps.compare.outputs.should_build == 'true'
+        run: |
+          cd openwrt
+          ./scripts/feeds install -a
+
+      # 第五步：执行个性化设置脚本
       - name: Run customize.sh
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
-          chmod +x customize.sh
           ./customize.sh
 
       - name: Make defconfig and download sources
