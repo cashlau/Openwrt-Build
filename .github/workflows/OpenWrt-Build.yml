@@ -148,6 +148,7 @@ jobs:
             exit 1
           fi
 
+      # 🚨 优化安装顺序：先装官方底座，再装 Passwall，彻底消灭 WARNING
       - name: Install feeds globally
         if: steps.compare.outputs.should_build == 'true'
         run: |
@@ -156,11 +157,16 @@ jobs:
           echo ">>> 刷新源索引，让系统知晓冲突包已被删除 <<<"
           ./scripts/feeds update -i
           
-          echo ">>> 强制优先从自定义源安装 Passwall 依赖 <<<"
+          echo ">>> 1. 先安装官方基础底座，提前备好 curl 等底层依赖 <<<"
+          ./scripts/feeds install -a -p packages || true
+          ./scripts/feeds install -a -p luci || true
+          ./scripts/feeds install -a -p routing || true
+          
+          echo ">>> 2. 强制优先从自定义源挂载 Passwall 等高级依赖 <<<"
           ./scripts/feeds install -a -f -p passwall_packages || true
           ./scripts/feeds install -a -f -p passwall_luci || true
           
-          echo ">>> 兜底安装剩余所有官方包 <<<"
+          echo ">>> 3. 兜底全局安装剩余所有包 <<<"
           ./scripts/feeds install -a
 
       - name: Run customize.sh
