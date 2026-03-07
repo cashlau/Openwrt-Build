@@ -102,14 +102,28 @@ jobs:
           echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
 
-      # 🚨 修复关键点：将自定义源追加到系统默认源末尾，避免覆盖官方核心源！
+      # 🚨 智能合并自定义 feeds，自动去除重复项，防止 "Duplicate feed" 报错
       - name: Apply custom feeds.conf.default
         if: steps.compare.outputs.should_build == 'true'
         run: |
           if [ -f config/feeds.conf.default ]; then
-            echo "" >> openwrt/feeds.conf.default
-            cat config/feeds.conf.default >> openwrt/feeds.conf.default
-            echo "✅ 已成功将自定义源追加到官方 feeds 列表中"
+            echo ">>> 开始智能合并 feeds 列表 <<<"
+            while read -r line; do
+              # 跳过空行和注释行
+              [[ -z "$line" || "$line" == \#* ]] && continue
+              
+              # 获取 feed 的名字 (例如 packages 或 passwall_luci)
+              feed_name=$(echo "$line" | awk '{print $2}')
+              
+              # 精确检查官方源里是否已经存在同名 feed
+              if ! awk '{print $2}' openwrt/feeds.conf.default | grep -qx "$feed_name"; then
+                echo "$line" >> openwrt/feeds.conf.default
+                echo "✅ 新增自定义源: $feed_name"
+              else
+                echo "⏭️ 忽略重复源: $feed_name (保留官方默认)"
+              fi
+            done < config/feeds.conf.default
+            echo "✅ feeds 列表智能合并完成！"
           else
             echo "⚠️ 未找到 config/feeds.conf.default，将使用官方默认源"
           fi
