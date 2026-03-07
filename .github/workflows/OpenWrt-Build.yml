@@ -1,4 +1,4 @@
-name: OpenWrt x86_64
+name: OpenWrt x86_64 Build
 
 on:
   workflow_dispatch:
@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -84,70 +85,55 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: |
           TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
+          echo "Cloning branch/tag: $TAG"
+          git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git openwrt
 
-      - name: Apply custom feeds.conf.default
+      # ==========================================
+      # 模块化调用阶段 (调用你写的外部脚本)
+      # ==========================================
+
+      - name: Load custom Feeds (check_feeds.sh)
         if: steps.compare.outputs.should_build == 'true'
         run: |
-          if [ -f config/feeds.conf.default ]; then
-            while read -r line; do
-              [[ -z "$line" || "$line" == \#* ]] && continue
-              feed_name=$(echo "$line" | awk '{print $2}')
-              if ! awk '{print $2}' openwrt/feeds.conf.default | grep -qx "$feed_name"; then
-                echo "$line" >> openwrt/feeds.conf.default
-              fi
-            done < config/feeds.conf.default
+          # check_feeds.sh 脚本内部自带了 cd openwrt 逻辑，直接在根目录运行即可
+          bash scripts/check_feeds.sh
+
+      - name: Load External Packages (ext_packages.sh)
+        if: steps.compare.outputs.should_build == 'true'
+        working-directory: ./openwrt
+        run: |
+          # ext_packages.sh 需要在 openwrt 目录内执行，以便精准克隆到 package/ 目录
+          bash ../scripts/ext_packages.sh
+
+      - name: Apply Custom Configuration (customize.sh & .config)
+        if: steps.compare.outputs.should_build == 'true'
+        working-directory: ./openwrt
+        run: |
+          # 拷贝精简版的 .config 种子文件过去
+          cp ../config/.config .config
+          
+          # 执行自定义系统修改脚本 (如修改 IP、主机名等)
+          if [ -f ../config/customize.sh ]; then
+            bash ../config/customize.sh
           fi
 
-      - name: Update feeds
-        if: steps.compare.outputs.should_build == 'true'
-        run: |
-          cd openwrt
-          ./scripts/feeds update -a
-
-      - name: Prepare scripts and config
-        if: steps.compare.outputs.should_build == 'true'
-        run: |
-          mkdir -p openwrt/scripts
-          cp config/.config openwrt/.config
-          cp config/customize.sh openwrt/
-          cp -r scripts/. openwrt/scripts/
-          chmod +x openwrt/customize.sh openwrt/scripts/*.sh
-
-      - name: Run ext_packages.sh if present
-        if: steps.compare.outputs.should_build == 'true'
-        run: |
-          cd openwrt
-          if [ -f scripts/ext_packages.sh ]; then
-            ./scripts/ext_packages.sh
-          fi
-
-      - name: Install feeds globally
-        if: steps.compare.outputs.should_build == 'true'
-        run: |
-          cd openwrt
-          ./scripts/feeds update -i
-          ./scripts/feeds install -a -f -p passwall_packages || true
-          ./scripts/feeds install -a -f -p passwall_luci || true
-          ./scripts/feeds install -a
-
-      - name: Run customize.sh
-        if: steps.compare.outputs.should_build == 'true'
-        run: |
-          cd openwrt
-          ./customize.sh
+      # ==========================================
+      # 编译与发布阶段
+      # ==========================================
 
       - name: Make defconfig and download sources
         if: steps.compare.outputs.should_build == 'true'
+        working-directory: ./openwrt
         run: |
-          cd openwrt
+          # 自动根据精简版 .config 补全所有系统依赖
           make defconfig
           make download -j8
 
       - name: Build OpenWrt x86_64
         if: steps.compare.outputs.should_build == 'true'
+        working-directory: ./openwrt
         run: |
-          cd openwrt
+          echo -e "$(nproc) thread compile"
           make -j$(nproc) || make -j1 V=s
 
       - name: Get build time
@@ -179,4 +165,5 @@ jobs:
         uses: actions/cache@v3
         with:
           path: last_build_version.txt
-          key: last-build-version-cache
+          key: last-build-version-cache-${{ github.run_id }}
+          restore-keys: last-build-version-cache
