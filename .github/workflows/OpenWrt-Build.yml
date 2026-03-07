@@ -23,10 +23,19 @@ jobs:
           key: last-build-version-cache
           restore-keys: last-build-version-cache
 
+      # 🛠️ 使用原生 Git 命令获取，去掉兜底，获取失败直接退出
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
-          TAG=$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | jq -r '.[].name' | grep '^v[0-9]' | grep -vE 'rc|SNAPSHOT' | sort -Vr | head -n1)
+          # 抓取官方仓库最新正式版标签 (排除 rc 版本)
+          TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git | awk -F/ '{print $NF}' | grep -E '^v[0-9]' | grep -v 'rc' | sort -V | tail -n1)
+          
+          if [ -z "$TAG" ]; then
+            echo "❌ Failed to fetch latest tag. Stop build."
+            exit 1
+          fi
+          
+          echo "Detected latest stable tag: $TAG"
           echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Compare versions
@@ -75,7 +84,7 @@ jobs:
             gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
-      # 🆕 新增：安装 Go 1.25
+      # 安装 Go 1.25 (兼容较新的 OpenWrt 编译)
       - name: Set up Go 1.25
         if: steps.compare.outputs.should_build == 'true'
         uses: actions/setup-go@v5
@@ -90,15 +99,8 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: |
           TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          echo "Latest tag detected: $TAG"
-
-          if [ -z "$TAG" ]; then
-            echo "❌ Upstream tag not detected. Possibly GitHub API rate limit. Stop build."
-            exit 1
-          fi
-
+          echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
-
 
       - name: Update and install feeds
         if: steps.compare.outputs.should_build == 'true'
