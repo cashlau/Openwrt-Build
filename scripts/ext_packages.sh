@@ -5,7 +5,6 @@ set -x  # 开启调试输出
 # ===============================
 # 1. 外部扩展包配置
 # ===============================
-# 注意：这里移除了 Passwall，因为你已经把它写进 feeds.conf.default 了
 declare -A EXT_PACKAGES_NAME=(
   [1]="luci-app-usb-printer"
   [2]="luci-app-argon-config"
@@ -85,14 +84,10 @@ rm -rf feeds/packages/lang/golang
 git clone --depth=1 -b 25.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # ===============================
-# 5. 更新并安装 Feeds (此时会拉取 feeds.conf 里的新版 Passwall)
+# 5. 清理官方冲突包 (不要在这里 install，交给 .yml 处理)
 # ===============================
-./scripts/feeds update -a
-
-# 核心步骤：移除官方 feeds 中旧的冲突核心组件
+echo ">>> 正在清理官方 feeds 中的冲突组件..."
 rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls}
-
-./scripts/feeds install -a
 
 # ===============================
 # 6. 写入编译选项到 .config
@@ -117,9 +112,4 @@ echo "CONFIG_PACKAGE_luci-app-momo=y" >> "$CONFIG_FILE"
 echo "CONFIG_PACKAGE_mosdns=y" >> "$CONFIG_FILE"
 echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
 
-# ===============================
-# 7. 生成最终配置
-# ===============================
-make defconfig
-
-echo "✅ 编译环境配置完成！Passwall 已通过 Feeds 引入。"
+echo "✅ 扩展包拉取与冲突清理完成！(后续的安装和配置生成将由 Github Actions 接管)"
