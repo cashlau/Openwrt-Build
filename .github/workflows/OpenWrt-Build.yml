@@ -3,7 +3,7 @@ name: OpenWrt x86_64
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 3'  # 每周三凌晨0点
+    - cron: '0 0 * * 3'
 
 jobs:
   build:
@@ -23,11 +23,9 @@ jobs:
           key: last-build-version-cache
           restore-keys: last-build-version-cache
 
-      # 使用原生 Git 命令获取，去掉兜底，获取失败直接退出
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
-          # 抓取官方仓库最新正式版标签 (排除 rc 版本)
           TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git | awk -F/ '{print $NF}' | grep -E '^v[0-9]' | grep -v 'rc' | sort -V | tail -n1)
           
           if [ -z "$TAG" ]; then
@@ -84,12 +82,12 @@ jobs:
             gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
             rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
-      # 安装 Go 1.25 (兼容较新的 OpenWrt 编译)
       - name: Set up Go 1.25
         if: steps.compare.outputs.should_build == 'true'
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
+          cache: false
 
       - name: Verify Go version
         if: steps.compare.outputs.should_build == 'true'
@@ -102,20 +100,16 @@ jobs:
           echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
 
-      # 🚨 智能合并自定义 feeds，自动去除重复项，防止 "Duplicate feed" 报错
       - name: Apply custom feeds.conf.default
         if: steps.compare.outputs.should_build == 'true'
         run: |
           if [ -f config/feeds.conf.default ]; then
             echo ">>> 开始智能合并 feeds 列表 <<<"
             while read -r line; do
-              # 跳过空行和注释行
               [[ -z "$line" || "$line" == \#* ]] && continue
               
-              # 获取 feed 的名字 (例如 packages 或 passwall_luci)
               feed_name=$(echo "$line" | awk '{print $2}')
               
-              # 精确检查官方源里是否已经存在同名 feed
               if ! awk '{print $2}' openwrt/feeds.conf.default | grep -qx "$feed_name"; then
                 echo "$line" >> openwrt/feeds.conf.default
                 echo "✅ 新增自定义源: $feed_name"
@@ -128,14 +122,12 @@ jobs:
             echo "⚠️ 未找到 config/feeds.conf.default，将使用官方默认源"
           fi
 
-      # 第一步：只更新源列表，此时不安装
       - name: Update feeds
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           ./scripts/feeds update -a
 
-      # 第二步：提前拷贝脚本和配置文件，为运行 ext_packages.sh 准备
       - name: Prepare scripts and config
         if: steps.compare.outputs.should_build == 'true'
         run: |
@@ -145,7 +137,6 @@ jobs:
           cp -r scripts/. openwrt/scripts/
           chmod +x openwrt/customize.sh openwrt/scripts/*.sh
 
-      # 第三步：执行 ext_packages.sh (在这里克隆包并删除冲突的核心)
       - name: Run ext_packages.sh if present
         if: steps.compare.outputs.should_build == 'true'
         run: |
@@ -157,27 +148,33 @@ jobs:
             exit 1
           fi
 
-      # 第四步：全局安装所有源。由于此时冲突包已被删，安装会正确挂载 passwall 等包
       - name: Install feeds globally
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
+          
+          echo ">>> 刷新源索引，让系统知晓冲突包已被删除 <<<"
+          ./scripts/feeds update -i
+          
+          echo ">>> 强制优先从自定义源安装 Passwall 依赖 <<<"
+          ./scripts/feeds install -a -f -p passwall_packages || true
+          ./scripts/feeds install -a -f -p passwall_luci || true
+          
+          echo ">>> 兜底安装剩余所有官方包 <<<"
           ./scripts/feeds install -a
 
-      # 第五步：执行个性化设置脚本
       - name: Run customize.sh
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           ./customize.sh
 
-      # 隐藏源码下载时的海量刷屏日志
       - name: Make defconfig and download sources
         if: steps.compare.outputs.should_build == 'true'
         run: |
           cd openwrt
           make defconfig
-          make download -j8 > /dev/null 2>&1
+          make download -j8
 
       - name: Build OpenWrt x86_64
         if: steps.compare.outputs.should_build == 'true'
