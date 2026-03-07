@@ -23,7 +23,7 @@ jobs:
           key: last-build-version-cache
           restore-keys: last-build-version-cache
 
-      # 🛠️ 使用原生 Git 命令获取，去掉兜底，获取失败直接退出
+      # 使用原生 Git 命令获取，去掉兜底，获取失败直接退出
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
@@ -101,6 +101,17 @@ jobs:
           TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
           echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
+
+      # 🆕 新增：在更新 feeds 之前，应用你自定义的 feeds.conf.default
+      - name: Apply custom feeds.conf.default
+        if: steps.compare.outputs.should_build == 'true'
+        run: |
+          if [ -f config/feeds.conf.default ]; then
+            cp config/feeds.conf.default openwrt/feeds.conf.default
+            echo "✅ 已成功覆盖自定义 feeds.conf.default"
+          else
+            echo "⚠️ 未找到 config/feeds.conf.default，将使用官方默认源"
+          fi
 
       - name: Update and install feeds
         if: steps.compare.outputs.should_build == 'true'
