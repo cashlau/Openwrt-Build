@@ -98,4 +98,20 @@ EOF
 chmod +x files/etc/board.d/99-default_network
 echo "✅ 自动网口识别脚本写入完成"
 
+
+
+# -------- Argon 首页温度显示支持 --------
+
+mkdir -p files/etc/uci-defaults
+cat > files/etc/uci-defaults/99-argon-temp <<'EOF'
+#!/bin/sh
+# 强制开启 Argon 主题首页显示支持
+uci set luci.main.mediaurlbase='/luci-static/argon'
+uci commit luci
+exit 0
+EOF
+chmod +x files/etc/uci-defaults/99-argon-temp
+
+echo "✅ 首页温度显示支持已追加至末尾"
+
 echo "全部操作完成！"
