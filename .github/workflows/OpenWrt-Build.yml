@@ -102,13 +102,14 @@ jobs:
           echo "Cloning source code with tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git
 
-      # 应用自定义的 feeds.conf.default
+      # 🚨 修复关键点：将自定义源追加到系统默认源末尾，避免覆盖官方核心源！
       - name: Apply custom feeds.conf.default
         if: steps.compare.outputs.should_build == 'true'
         run: |
           if [ -f config/feeds.conf.default ]; then
-            cp config/feeds.conf.default openwrt/feeds.conf.default
-            echo "✅ 已成功覆盖自定义 feeds.conf.default"
+            echo "" >> openwrt/feeds.conf.default
+            cat config/feeds.conf.default >> openwrt/feeds.conf.default
+            echo "✅ 已成功将自定义源追加到官方 feeds 列表中"
           else
             echo "⚠️ 未找到 config/feeds.conf.default，将使用官方默认源"
           fi
