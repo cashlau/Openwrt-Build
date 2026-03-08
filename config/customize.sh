@@ -113,22 +113,12 @@ EOF
 chmod +x files/etc/uci-defaults/99-argon-temp
 
 # =======================================================
-# -------- 防冲突设计：代理插件默认不自启 --------
-# =======================================================
-echo "🛡️ 正在修改默认配置：关闭代理插件开机自启..."
 
-# 修改 Nikki 默认不启用
-if [ -f "package/feeds/nikki/nikki/files/nikki.config" ]; then
-    sed -i 's/option enabled .*/option enabled '\'0\''/g' package/feeds/nikki/nikki/files/nikki.config
-    echo "✅ 已关闭 Nikki 默认自启"
-fi
+# 1. 按照你的要求，仅追加这一行配置
+echo "CONFIG_PACKAGE_kmod-video-uvc=y" >> .config
 
-# 修改 Passwall 默认不启用
-if [ -f "package/feeds/passwall_luci/luci-app-passwall/root/etc/config/passwall" ]; then
-    sed -i 's/option enabled .*/option enabled '\'0\''/g' package/feeds/passwall_luci/luci-app-passwall/root/etc/config/passwall
-    echo "✅ 已关闭 Passwall 默认自启"
-fi
-
+# 2. 防冲突：关闭代理插件自启
+[ -f "package/feeds/nikki/nikki/files/nikki.config" ] && sed -i 's/option enabled .*/option enabled '\'0\''/g' package/feeds/nikki/nikki/files/nikki.config
+[ -f "package/feeds/passwall_luci/luci-app-passwall/root/etc/config/passwall" ] && sed -i 's/option enabled .*/option enabled '\'0\''/g' package/feeds/passwall_luci/luci-app-passwall/root/etc/config/passwall
 
 echo "🎉 全部操作完成！"
-echo "全部操作完成！"
