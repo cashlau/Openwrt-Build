@@ -11,18 +11,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      # 【修改点 1：修复缓存读取逻辑】
       - name: Restore last built version cache
         id: cache-version
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v4
         with:
           path: last_build_version.txt
-          key: last-build-version-cache
-          restore-keys: last-build-version-cache
+          key: last-build-version-
+          restore-keys: |
+            last-build-version-
 
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
@@ -37,7 +39,8 @@ jobs:
       - name: Compare versions
         id: compare
         run: |
-          LAST_VER=$(cat last_build_version.txt 2>/dev/null || echo "none")
+          # 增加文件存在性检查，防止文件不存在时报错
+          LAST_VER=$([ -f last_build_version.txt ] && cat last_build_version.txt || echo "none")
           LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
           if [ "$LAST_VER" = "$LATEST_TAG" ]; then
             echo "should_build=false" >> $GITHUB_OUTPUT
@@ -70,11 +73,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
-      - name: Set up Go 1.25
+      # 【修改点 2：Go 版本设为 stable】
+      - name: Set up Go
         if: steps.compare.outputs.should_build == 'true'
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: 'stable'
           cache: false
 
       - name: Verify Go version
@@ -141,6 +145,7 @@ jobs:
         id: buildtime
         run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
+      # 【保留点 3：完全保留你原来的制品路径和 Release 设置】
       - name: Create GitHub Release and upload firmware
         if: steps.compare.outputs.should_build == 'true'
         uses: ncipollo/release-action@v1
@@ -160,10 +165,10 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: echo "${{ steps.get_latest_tag.outputs.latest_tag }}" > last_build_version.txt
 
+      # 【修改点 1 延续：正确保存缓存以供下次对比】
       - name: Save last built version cache
         if: steps.compare.outputs.should_build == 'true'
-        uses: actions/cache@v3
+        uses: actions/cache/save@v4
         with:
           path: last_build_version.txt
-          key: last-build-version-cache-${{ github.run_id }}
-          restore-keys: last-build-version-cache
+          key: last-build-version-${{ github.run_id }}
