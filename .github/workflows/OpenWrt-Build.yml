@@ -39,8 +39,13 @@ jobs:
       - name: Compare versions
         id: compare
         run: |
-          # 增加文件存在性检查，防止文件不存在时报错
-          LAST_VER=$([ -f last_build_version.txt ] && cat last_build_version.txt || echo "none")
+          # 增加文件存在性检查，防止首次运行或缓存丢失时报错
+          if [ ! -f last_build_version.txt ]; then
+            LAST_VER="none"
+          else
+            LAST_VER=$(cat last_build_version.txt)
+          fi
+          
           LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
           if [ "$LAST_VER" = "$LATEST_TAG" ]; then
             echo "should_build=false" >> $GITHUB_OUTPUT
@@ -99,24 +104,19 @@ jobs:
       - name: Load custom Feeds (check_feeds.sh)
         if: steps.compare.outputs.should_build == 'true'
         run: |
-          # check_feeds.sh 脚本内部自带了 cd openwrt 逻辑，直接在根目录运行即可
           bash scripts/check_feeds.sh
 
       - name: Load External Packages (ext_packages.sh)
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
-          # ext_packages.sh 需要在 openwrt 目录内执行，以便精准克隆到 package/ 目录
           bash ../scripts/ext_packages.sh
 
       - name: Apply Custom Configuration (customize.sh & .config)
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
-          # 拷贝精简版的 .config 种子文件过去
           cp ../config/.config .config
-          
-          # 执行自定义系统修改脚本 (如修改 IP、主机名等)
           if [ -f ../config/customize.sh ]; then
             bash ../config/customize.sh
           fi
@@ -129,15 +129,22 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
-          # 自动根据精简版 .config 补全所有系统依赖
           make defconfig
           make download -j8
 
+      # 【核心修改点：加入解决 Rust 报错的终极参数】
       - name: Build OpenWrt x86_64
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
           echo -e "$(nproc) thread compile"
+          
+          # 骗过 Rust 编译脚本，强制从源码稳妥编译 LLVM，解决 CI 环境下载失败的问题
+          export GITHUB_ACTIONS=false
+          
+          # 限制 Cargo 构建并发数，防止 GitHub Actions 内存溢出 (OOM)
+          export CARGO_BUILD_JOBS=2
+          
           make -j$(nproc) || make -j1 V=s
 
       - name: Get build time
@@ -145,7 +152,7 @@ jobs:
         id: buildtime
         run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
-      # 【保留点 3：完全保留你原来的制品路径和 Release 设置】
+      # 【修改点：产物路径使用通配符，防止文件名变动导致上传失败】
       - name: Create GitHub Release and upload firmware
         if: steps.compare.outputs.should_build == 'true'
         uses: ncipollo/release-action@v1
@@ -157,7 +164,7 @@ jobs:
             🎉 OpenWrt x86_64 ${{ steps.get_latest_tag.outputs.latest_tag }}
             📅 构建时间：${{ steps.buildtime.outputs.time }}
             🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.get_latest_tag.outputs.latest_tag }}
-          artifacts: openwrt/bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+          artifacts: openwrt/bin/targets/x86/64/*.img.gz
           makeLatest: true
           skipIfReleaseExists: true
 
