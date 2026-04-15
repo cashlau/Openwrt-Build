@@ -67,10 +67,6 @@ done
 rm -rf package/v2ray-geodata
 git clone --depth=1 https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
 
-# 替换 Go 工具链 (OpenWrt 25.12.0 编译高版本插件必备)
-echo ">>> Replacing golang with sbwml Go 25.x"
-rm -rf feeds/packages/lang/golang
-git clone --depth=1 -b 25.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # ===============================
 # 4. 写入编译选项到 .config
