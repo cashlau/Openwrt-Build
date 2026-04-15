@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -16,7 +18,6 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 【修改点 1：修复缓存读取逻辑】
       - name: Restore last built version cache
         id: cache-version
         uses: actions/cache/restore@v4
@@ -39,7 +40,6 @@ jobs:
       - name: Compare versions
         id: compare
         run: |
-          # 增加文件存在性检查，防止首次运行或缓存丢失时报错
           if [ ! -f last_build_version.txt ]; then
             LAST_VER="none"
           else
@@ -78,28 +78,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
 
-      # 【修改点 2：Go 版本设为 stable】
-      - name: Set up Go
-        if: steps.compare.outputs.should_build == 'true'
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-          cache: false
-
-      - name: Verify Go version
-        if: steps.compare.outputs.should_build == 'true'
-        run: go version
-
       - name: Clone OpenWrt source
         if: steps.compare.outputs.should_build == 'true'
         run: |
           TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
           echo "Cloning branch/tag: $TAG"
           git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git openwrt
-
-      # ==========================================
-      # 模块化调用阶段 (调用你写的外部脚本)
-      # ==========================================
 
       - name: Load custom Feeds (check_feeds.sh)
         if: steps.compare.outputs.should_build == 'true'
@@ -121,10 +105,6 @@ jobs:
             bash ../config/customize.sh
           fi
 
-      # ==========================================
-      # 编译与发布阶段
-      # ==========================================
-
       - name: Make defconfig and download sources
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
@@ -132,17 +112,14 @@ jobs:
           make defconfig
           make download -j8
 
-      # 【核心修改点：加入解决 Rust 报错的终极参数】
       - name: Build OpenWrt x86_64
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
           echo -e "$(nproc) thread compile"
           
-          # 骗过 Rust 编译脚本，强制从源码稳妥编译 LLVM，解决 CI 环境下载失败的问题
           export GITHUB_ACTIONS=false
           
-          # 限制 Cargo 构建并发数，防止 GitHub Actions 内存溢出 (OOM)
           export CARGO_BUILD_JOBS=2
           
           make -j$(nproc) || make -j1 V=s
@@ -152,7 +129,6 @@ jobs:
         id: buildtime
         run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
-      # 【修改点：产物路径使用通配符，防止文件名变动导致上传失败】
       - name: Create GitHub Release and upload firmware
         if: steps.compare.outputs.should_build == 'true'
         uses: ncipollo/release-action@v1
@@ -172,7 +148,6 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: echo "${{ steps.get_latest_tag.outputs.latest_tag }}" > last_build_version.txt
 
-      # 【修改点 1 延续：正确保存缓存以供下次对比】
       - name: Save last built version cache
         if: steps.compare.outputs.should_build == 'true'
         uses: actions/cache/save@v4
