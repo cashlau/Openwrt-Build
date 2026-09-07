@@ -257,4 +257,34 @@ EOF
 
 chmod +x files/etc/uci-defaults/99-disable-proxy-autostart
 
+
+# -------- 首次启动时禁用指定 APK 软件源 --------
+
+mkdir -p files/etc/uci-defaults
+
+cat > files/etc/uci-defaults/99-disable-custom-apk-feeds <<'EOF'
+#!/bin/sh
+set -e
+
+FEEDS_FILE="/etc/apk/repositories.d/distfeeds.list"
+
+# 文件不存在时保留脚本，下次启动再尝试。
+[ -f "$FEEDS_FILE" ] || exit 1
+
+# 只注释指定源，已注释的行不会重复添加 #。
+sed -i \
+    -e '\|^[[:space:]]*https\?://.*/momo/packages\.adb[[:space:]]*$|s/^/#/' \
+    -e '\|^[[:space:]]*https\?://.*/nikki/packages\.adb[[:space:]]*$|s/^/#/' \
+    -e '\|^[[:space:]]*https\?://.*/passwall_luci/packages\.adb[[:space:]]*$|s/^/#/' \
+    -e '\|^[[:space:]]*https\?://.*/passwall_packages/packages\.adb[[:space:]]*$|s/^/#/' \
+    -e '\|^[[:space:]]*https\?://.*/video/packages\.adb[[:space:]]*$|s/^/#/' \
+    "$FEEDS_FILE"
+
+exit 0
+EOF
+
+chmod +x files/etc/uci-defaults/99-disable-custom-apk-feeds
+
+echo "✅ APK 指定软件源自动注释脚本已写入"
+
 echo "🎉 全部操作完成！请在后续编译步骤执行 make defconfig"
