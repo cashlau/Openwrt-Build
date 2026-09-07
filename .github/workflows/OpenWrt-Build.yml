@@ -30,27 +30,42 @@ jobs:
       - name: Get latest OpenWrt stable release tag
         id: get_latest_tag
         run: |
-          TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git | awk -F/ '{print $NF}' | grep -E '^v[0-9]' | grep -v 'rc' | sort -V | tail -n1)
+          TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git \
+            | awk -F/ '{print $NF}' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V \
+            | tail -n1)
+
           if [ -z "$TAG" ]; then
             echo "❌ Failed to fetch latest tag. Stop build."
             exit 1
           fi
-          echo "latest_tag=$TAG" >> $GITHUB_OUTPUT
+
+          echo "Latest stable release: $TAG"
+          echo "latest_tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Compare versions
         id: compare
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          LATEST_TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
         run: |
-          if [ ! -f last_build_version.txt ]; then
-            LAST_VER="none"
-          else
+          if [ -f last_build_version.txt ]; then
             LAST_VER=$(cat last_build_version.txt)
-          fi
-          
-          LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          if [ "$LAST_VER" = "$LATEST_TAG" ]; then
-            echo "should_build=false" >> $GITHUB_OUTPUT
           else
-            echo "should_build=true" >> $GITHUB_OUTPUT
+            LAST_VER="none"
+          fi
+
+          echo "Last built version: $LAST_VER"
+          echo "Latest version: $LATEST_TAG"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "✅ Manual run: rebuild even if the version is unchanged."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LAST_VER" = "$LATEST_TAG" ]; then
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build skipped notice
@@ -76,14 +91,21 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev rsync unzip zlib1g-dev file wget python3-pyelftools ccache ash
+          sudo apt-get install -y \
+            build-essential clang flex bison g++ gawk \
+            gcc-multilib g++-multilib gettext git \
+            libncurses-dev libssl-dev rsync unzip \
+            zlib1g-dev file wget python3-pyelftools \
+            ccache ash
 
       - name: Clone OpenWrt source
         if: steps.compare.outputs.should_build == 'true'
+        env:
+          TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
         run: |
-          TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
           echo "Cloning branch/tag: $TAG"
-          git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git openwrt
+          git clone --depth=1 --branch "$TAG" \
+            https://github.com/openwrt/openwrt.git openwrt
 
       - name: Load custom Feeds (check_feeds.sh)
         if: steps.compare.outputs.should_build == 'true'
@@ -100,10 +122,19 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
+          for file in \
+            ../config/.config \
+            ../config/customize.sh \
+            ../config/27_temperature_argon.js
+          do
+            if [ ! -s "$file" ]; then
+              echo "❌ Missing or empty file: $file"
+              exit 1
+            fi
+          done
+
           cp ../config/.config .config
-          if [ -f ../config/customize.sh ]; then
-            bash ../config/customize.sh
-          fi
+          bash ../config/customize.sh
 
       - name: Make defconfig and download sources
         if: steps.compare.outputs.should_build == 'true'
@@ -116,18 +147,18 @@ jobs:
         if: steps.compare.outputs.should_build == 'true'
         working-directory: ./openwrt
         run: |
-          echo -e "$(nproc) thread compile"
-          
+          echo "$(nproc) thread compile"
+
           export GITHUB_ACTIONS=false
-          
           export CARGO_BUILD_JOBS=2
-          
-          make -j$(nproc) || make -j1 V=s
+
+          make -j"$(nproc)" || make -j1 V=s
 
       - name: Get build time
         if: steps.compare.outputs.should_build == 'true'
         id: buildtime
-        run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+        run: |
+          echo "time=$(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M:%S')" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release and upload firmware
         if: steps.compare.outputs.should_build == 'true'
@@ -135,22 +166,28 @@ jobs:
         with:
           token: ${{ secrets.IGH_TOKEN }}
           tag: ${{ steps.get_latest_tag.outputs.latest_tag }}
+          commit: ${{ github.sha }}
           name: OpenWrt x86_64 ${{ steps.get_latest_tag.outputs.latest_tag }}
           body: |
             🎉 OpenWrt x86_64 ${{ steps.get_latest_tag.outputs.latest_tag }}
-            📅 构建时间：${{ steps.buildtime.outputs.time }}
+            📅 构建时间：${{ steps.buildtime.outputs.time }}（Asia/Taipei）
             🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.get_latest_tag.outputs.latest_tag }}
           artifacts: openwrt/bin/targets/x86/64/*.img.gz
           makeLatest: true
-          skipIfReleaseExists: true
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true
 
       - name: Save latest built version to file
         if: steps.compare.outputs.should_build == 'true'
-        run: echo "${{ steps.get_latest_tag.outputs.latest_tag }}" > last_build_version.txt
+        env:
+          LATEST_TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
+        run: |
+          printf '%s\n' "$LATEST_TAG" > last_build_version.txt
 
       - name: Save last built version cache
         if: steps.compare.outputs.should_build == 'true'
         uses: actions/cache/save@v4
         with:
           path: last_build_version.txt
-          key: last-build-version-${{ github.run_id }}
+          key: last-build-version-${{ github.run_id }}-${{ github.run_attempt }}
