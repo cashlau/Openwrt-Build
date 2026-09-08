@@ -1,4 +1,4 @@
-# OpenWrt x86_64 自动构建固件
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/1edf6ada-8900-45a8-a4f9-d4e9b0749d03" /># OpenWrt x86_64 自动构建固件
 
 基于官方 OpenWrt 源码，自动编译集成常用插件的 x86_64 固件，发布至 GitHub Releases。
 
@@ -42,3 +42,6 @@
 - 请保持固件和配置同步更新
 - 每周三自动编译
 ---
+
+### 主页预览
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/a0ca5306-202a-4ff8-9b22-b1478408689a" />
