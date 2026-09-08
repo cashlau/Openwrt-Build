@@ -25,7 +25,9 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 	gap: 10px;
-	padding: 0 16px 8px;
+	padding: 12px 16px;
+	margin: 0;
+	width: 100%;
 	box-sizing: border-box;
 }
 
@@ -104,8 +106,9 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 .temp-argon-desc {
 	display: block;
 	margin-top: 2px;
-	opacity: .56;
-	font-size: 10px;
+	opacity: 1;
+	color: #586174;
+	font-size: 11px;
 	line-height: 1.2;
 	white-space: nowrap;
 	overflow: hidden;
@@ -123,16 +126,21 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 	letter-spacing: -.5px;
 }
 
-:root[data-darkmode="true"] .temp-argon-card {
-	background: var(--background-color-high, rgba(34, 39, 46, .88));
+.temp-argon-grid.temp-dark .temp-argon-card {
+	background: #252525;
+	border-color: #404040;
 	box-shadow: none;
 }
 
-:root[data-darkmode="true"] .temp-argon-card:not(.warm):not(.hot):not(.unavailable) {
+.temp-argon-grid.temp-dark .temp-argon-card:not(.warm):not(.hot):not(.unavailable) {
 	--temp-accent: #90ee90;
+	--temp-fill: rgba(144, 238, 144, .12);
 }
-:root[data-darkmode="true"] .temp-argon-card.warm { --temp-accent: #f0ad4e; }
-:root[data-darkmode="true"] .temp-argon-card.hot { --temp-accent: #ff8585; }
+.temp-argon-grid.temp-dark .temp-argon-card.warm { --temp-accent: #ffd080; --temp-fill: rgba(240, 173, 78, .12); }
+.temp-argon-grid.temp-dark .temp-argon-card.hot { --temp-accent: #ff9c9c; --temp-fill: rgba(230, 83, 83, .12); }
+.temp-argon-grid.temp-dark .temp-argon-card.unavailable { --temp-accent: #c3ccd8; }
+.temp-argon-grid.temp-dark .temp-argon-name { color: #f1f5f9; }
+.temp-argon-grid.temp-dark .temp-argon-desc { color: #c3ccd8; }
 
 @media (max-width: 600px) {
 	.temp-argon-grid {
@@ -252,7 +260,7 @@ return baseclass.extend({
 		if (!cards.length)
 			return E('em', {}, tempText('No temperature sensors available', '未找到温度传感器', '未找到溫度感測器'));
 
-		return E('div', { 'class': 'temp-argon-grid' }, cards.map(card => {
+		let grid = E('div', { 'class': 'temp-argon-grid' }, cards.map(card => {
 			let raw = this.tempData[card.path];
 			let temp = (raw === undefined || raw === null || String(raw).trim() === '' || !Number.isFinite(Number(raw))) ? null : this.formatTemp(raw);
 			let state = temp === null ? ' unavailable' : (temp >= card.hot ? ' hot' : (temp >= card.warm ? ' warm' : ''));
@@ -269,5 +277,19 @@ return baseclass.extend({
 				E('span', { 'class': 'temp-argon-value' }, temp === null ? '--' : temp + ' °C')
 			]);
 		}));
+		// Inspect the surrounding panel after insertion; Argon versions use
+		// different dark-mode attributes. Re-evaluate on each status refresh.
+		requestAnimationFrame(() => {
+			if (!grid.isConnected) return;
+			let dark = document.documentElement.dataset.darkmode === 'true';
+			for (let parent = grid.parentElement; parent; parent = parent.parentElement) {
+				let rgb = getComputedStyle(parent).backgroundColor.match(/[\d.]+/g);
+				if (!rgb || rgb.length < 3 || (rgb.length > 3 && Number(rgb[3]) < .9)) continue;
+				dark = (Number(rgb[0]) * .2126 + Number(rgb[1]) * .7152 + Number(rgb[2]) * .0722) < 128;
+				break;
+			}
+			grid.classList.toggle('temp-dark', dark);
+		});
+		return grid;
 	}
 });
