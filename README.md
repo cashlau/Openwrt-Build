@@ -15,8 +15,8 @@
   - **全能推送**（微信、钉钉、Telegram等多平台消息通知）
   - **Wol网络唤醒**（支持Etherwake,Wakeonlan） 
   - **动态DNS**（自动更新动态IP，保障外网访问）  
-  - **Nikki**（基于 Mihomo 的透明代理插件，支持访问控制与配置混合）
-  - **Momo**（基于 Sing-Box 的透明代理插件，支持访问控制与配置混合）
+  - **Nikki**（基于 Mihomo 的透明代理插件，支持访问控制与配置混合,配合yaml配置文件可防止DNS泄露）
+  - **Momo**（基于 Sing-Box 的透明代理插件，支持访问控制与配置混合,配合json配置文件可防止DNS泄露）
   - **rtp2httpd**（IPTV)
   - **USB打印服务器**（支持共享USB打印机）
   - **Cloudflare 零信任隧道**（Cloudflare 零信任安全服务帮助你从网络内外部获取最大程度的安全性）
