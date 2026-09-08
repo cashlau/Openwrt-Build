@@ -307,7 +307,7 @@ sed -i \
     -e '\|^[[:space:]]*https\?://.*/nikki/packages\.adb[[:space:]]*$|s/^/#/' \
     -e '\|^[[:space:]]*https\?://.*/passwall_luci/packages\.adb[[:space:]]*$|s/^/#/' \
     -e '\|^[[:space:]]*https\?://.*/passwall_packages/packages\.adb[[:space:]]*$|s/^/#/' \
-    -e '\|^[[:space:]]*https\?://.*/video/packages\.adb[[:space:]]*$|s/^/#/' \
+    -e '\|^[[:space:]]*https\?://.*/rtp2httpd/packages.adb\.adb[[:space:]]*$|s/^/#/' \
     "$FEEDS_FILE"
 
 exit 0
