@@ -149,6 +149,54 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 }
 `));
 
+function syncTempTheme() {
+	document.querySelectorAll('.temp-argon-grid').forEach(grid => {
+		let dark = false;
+		let explicit = document.documentElement.getAttribute('data-darkmode');
+		if (explicit !== 'true' && explicit !== 'false')
+			explicit = document.body && document.body.getAttribute('data-darkmode');
+		if (explicit === 'true' || explicit === 'false') {
+			dark = explicit === 'true';
+		} else {
+			for (let parent = grid.parentElement; parent; parent = parent.parentElement) {
+				let rgb = getComputedStyle(parent).backgroundColor.match(/[\d.]+/g);
+				if (!rgb || rgb.length < 3 || (rgb.length > 3 && Number(rgb[3]) < .9)) continue;
+				dark = (Number(rgb[0]) * .2126 + Number(rgb[1]) * .7152 + Number(rgb[2]) * .0722) < 128;
+				break;
+			}
+		}
+		if (grid.classList.contains('temp-dark') !== dark)
+			grid.classList.toggle('temp-dark', dark);
+	});
+}
+
+// Keep theme changes independent of the temperature polling interval.
+var tempThemeFrame = null;
+function scheduleTempTheme() {
+	if (tempThemeFrame !== null) return;
+	tempThemeFrame = requestAnimationFrame(() => {
+		tempThemeFrame = null;
+		syncTempTheme();
+	});
+}
+var tempThemeObserver = new MutationObserver(records => {
+	if (records.some(record => !(record.target instanceof Element) || !record.target.closest('.temp-argon-grid')))
+		scheduleTempTheme();
+});
+tempThemeObserver.observe(document.documentElement, {
+	subtree: true, attributes: true, childList: true,
+	attributeFilter: [ 'class', 'style', 'data-darkmode', 'data-theme', 'href', 'media', 'disabled' ]
+});
+var tempColorScheme = window.matchMedia('(prefers-color-scheme: dark)');
+if (tempColorScheme.addEventListener)
+	tempColorScheme.addEventListener('change', scheduleTempTheme);
+else
+	tempColorScheme.addListener(scheduleTempTheme);
+document.addEventListener('transitionend', scheduleTempTheme, true);
+document.addEventListener('load', event => {
+	if (event.target instanceof HTMLLinkElement) scheduleTempTheme();
+}, true);
+
 return baseclass.extend({
 	title: tempText('Hardware temperature', '硬件温度', '硬體溫度'),
 
@@ -277,19 +325,7 @@ return baseclass.extend({
 				E('span', { 'class': 'temp-argon-value' }, temp === null ? '--' : temp + ' °C')
 			]);
 		}));
-		// Inspect the surrounding panel after insertion; Argon versions use
-		// different dark-mode attributes. Re-evaluate on each status refresh.
-		requestAnimationFrame(() => {
-			if (!grid.isConnected) return;
-			let dark = document.documentElement.dataset.darkmode === 'true';
-			for (let parent = grid.parentElement; parent; parent = parent.parentElement) {
-				let rgb = getComputedStyle(parent).backgroundColor.match(/[\d.]+/g);
-				if (!rgb || rgb.length < 3 || (rgb.length > 3 && Number(rgb[3]) < .9)) continue;
-				dark = (Number(rgb[0]) * .2126 + Number(rgb[1]) * .7152 + Number(rgb[2]) * .0722) < 128;
-				break;
-			}
-			grid.classList.toggle('temp-dark', dark);
-		});
+		scheduleTempTheme();
 		return grid;
 	}
 });
