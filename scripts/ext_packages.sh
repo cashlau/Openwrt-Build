@@ -1,86 +1,67 @@
 #!/bin/bash
-set -e
-set -x  # 开启调试输出
+set -euo pipefail
 
-# ===============================
-# 1. 外部扩展包配置
-# ===============================
-declare -A EXT_PACKAGES_NAME=(
-  [1]="luci-app-usb-printer"
-  [2]="luci-app-argon-config"
-  [3]="luci-theme-argon"
-  [4]="luci-app-pushbot"
-  [5]="mosdns"
-  [6]="luci-app-netspeedtest"
-)
+# Run from the OpenWrt source root, after feeds installation.
+test -f include/toplevel.mk
+test -d feeds/packages/lang/golang
 
-declare -A EXT_PACKAGES_PATH=(
-  [1]="package/luci-app-usb-printer"
-  [2]="package/luci-app-argon-config"
-  [3]="package/luci-theme-argon"
-  [4]="package/luci-app-pushbot"
-  [5]="package/mosdns"
-  [6]="package/luci-app-netspeedtest"
-)
+clone_package() {
+    local destination="$1" repository="$2" branch="${3:-}"
+    if [ -e "$destination" ]; then
+        echo "Existing package directory: $destination; refusing to overwrite"
+        exit 1
+    fi
+    if [ -n "$branch" ]; then
+        git clone --depth=1 --branch "$branch" "$repository" "$destination"
+    else
+        git clone --depth=1 "$repository" "$destination"
+    fi
+}
 
-declare -A EXT_PACKAGES_REPOSITORY=(
-  [1]="https://github.com/cashlau/luci-app-usb_printer.git"
-  [2]="https://github.com/jerrykuku/luci-app-argon-config"
-  [3]="https://github.com/jerrykuku/luci-theme-argon"
-  [4]="https://github.com/zzsj0928/luci-app-pushbot"
-  [5]="https://github.com/sbwml/luci-app-mosdns"
-  [6]="https://github.com/muink/luci-app-netspeedtest.git"
-)
+clone_package package/luci-app-usb-printer https://github.com/cashlau/luci-app-usb_printer.git
+clone_package package/luci-app-argon-config https://github.com/jerrykuku/luci-app-argon-config
+clone_package package/luci-theme-argon https://github.com/jerrykuku/luci-theme-argon
+clone_package package/luci-app-pushbot https://github.com/zzsj0928/luci-app-pushbot
+clone_package package/mosdns https://github.com/sbwml/luci-app-mosdns v5
+clone_package package/luci-app-netspeedtest https://github.com/muink/luci-app-netspeedtest.git master
 
-declare -A EXT_PACKAGES_BRANCH=(
-  [1]=""
-  [2]=""
-  [3]=""
-  [4]=""
-  [5]="v5"
-  [6]="master"
-)
-
-# ===============================
-# 2. 克隆非 feeds 的扩展包
-# ===============================
-for i in "${!EXT_PACKAGES_NAME[@]}"; do
-  pkg_name="${EXT_PACKAGES_NAME[$i]}"
-  pkg_path="${EXT_PACKAGES_PATH[$i]}"
-  pkg_repo="${EXT_PACKAGES_REPOSITORY[$i]}"
-  pkg_branch="${EXT_PACKAGES_BRANCH[$i]}"
-
-  rm -rf "$pkg_path" # 确保目录干净
-  echo "Cloning $pkg_name ..."
-  if [ -z "$pkg_branch" ]; then
-    git clone --depth=1 "$pkg_repo" "$pkg_path"
-  else
-    git clone --depth=1 -b "$pkg_branch" "$pkg_repo" "$pkg_path"
-  fi
-  rm -rf "$pkg_path/.git"
+# Reuse geodata supplied by an installed feed to avoid duplicate packages.
+GEODATA_FOUND=0
+for candidate in package/v2ray-geodata package/feeds/*/v2ray-geodata; do
+    if [ -f "$candidate/Makefile" ]; then GEODATA_FOUND=1; break; fi
 done
+if [ "$GEODATA_FOUND" -eq 0 ]; then
+    clone_package package/v2ray-geodata https://github.com/sbwml/v2ray-geodata
+fi
 
-# ===============================
-# 3. 特殊处理：v2ray-geodata 与 Go 工具链
-# ===============================
-# 按照 sbwml 的建议拉取 v2ray-geodata 源码
-rm -rf package/v2ray-geodata
-git clone --depth=1 https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
+# Update the OpenWrt host Go toolchain, not Ubuntu's system Go.
+# Download and inspect the replacement before moving the existing directory.
+GO_STAGE=$(mktemp -d "$PWD/.golang-update.XXXXXX")
+git clone --depth=1 --branch 27.x \
+    https://github.com/sbwml/packages_lang_golang.git "$GO_STAGE/new"
+if ! grep -Eq '^PKG_VERSION[[:space:]]*:?=[[:space:]]*1\.27([.[:space:]]|$)' \
+    "$GO_STAGE/new/golang/Makefile"; then
+    echo "Go 1.27 version check failed; original toolchain retained."
+    exit 1
+fi
+test -s "$GO_STAGE/new/golang-package.mk"
+mv feeds/packages/lang/golang "$GO_STAGE/original"
+mv "$GO_STAGE/new" feeds/packages/lang/golang
+echo "Go build files updated; original saved at $GO_STAGE/original"
+grep '^PKG_VERSION' feeds/packages/lang/golang/golang/Makefile
 
+# The workflow copies config/.config AFTER this script. Apply these options
+# at make defconfig time, so that copy cannot erase them.
+mkdir -p files/etc/uci-defaults
+cat > .external-package-options <<'EOF'
+luci-app-usb-printer
+luci-app-argon-config
+luci-theme-argon
+luci-app-pushbot
+mosdns
+luci-app-mosdns
+luci-app-netspeedtest
+EOF
 
-# ===============================
-# 4. 写入编译选项到 .config
-# ===============================
-CONFIG_FILE=".config"
-
-# 自动写入上面数组里定义好的所有包
-for i in "${!EXT_PACKAGES_NAME[@]}"; do
-  echo "CONFIG_PACKAGE_${EXT_PACKAGES_NAME[$i]}=y" >> "$CONFIG_FILE"
-done
-
-# 注意：Momo、Passwall 和 Nikki 的基础勾选已经在你的基础 config/.config 文件里了
-# 这里只追加其他杂项和依赖
-echo "CONFIG_PACKAGE_luci-app-mosdns=y" >> "$CONFIG_FILE"
-echo "CONFIG_PACKAGE_v2ray-geodata=y" >> "$CONFIG_FILE"
-
-echo "✅ 扩展包拉取与配置写入完成！"
+echo 'External packages and Go toolchain prepared.'
+echo 'Apply .external-package-options after copying config/.config.'
