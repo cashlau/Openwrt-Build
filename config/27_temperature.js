@@ -2,17 +2,39 @@
 'require baseclass';
 'require rpc';
 
+var tempLang = String(document.documentElement.lang || L.env.lang || 'en').toLowerCase();
+function tempText(en, zh, tw) {
+	return /^zh/.test(tempLang) ? (/tw|hk|hant/.test(tempLang) ? (tw || zh) : zh) : en;
+}
+function tempModel(kind, value) {
+	var text = String(value || '');
+	if (kind === 'cpu')
+		return text.replace(/\(R\)|\(TM\)/gi, '').replace(/\s+CPU\b/g, '').replace(/\s+@\s+.*$/, '').replace(/\s+/g, ' ').trim();
+	if (kind === 'pch') {
+		var names = { cometlake: 'Comet Lake', skylake: 'Skylake', cannonlake: 'Cannon Lake', tigerlake: 'Tiger Lake', alderlake: 'Alder Lake' };
+		return text.replace(/pch_([a-z0-9]+)/gi, function(full, family) {
+			return names[family.toLowerCase()] ? 'Intel ' + names[family.toLowerCase()] + ' PCH' : full;
+		});
+	}
+	return text;
+}
+
 /* Compact temperature cards for the LuCI status overview (Argon friendly). */
 document.head.append(E('style', { 'type': 'text/css' }, `
 .temp-argon-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 	gap: 12px;
-	padding: 2px 0 14px;
+	padding: 2px 16px 14px;
+	box-sizing: border-box;
 }
 
 .temp-argon-card {
 	--temp-accent: #20b78a;
+	--temp-fill: rgba(32, 183, 138, .14);
+	isolation: isolate;
+	box-sizing: border-box;
+	min-width: 0;
 	position: relative;
 	display: flex;
 	align-items: center;
@@ -21,12 +43,13 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 	padding: 12px 16px 12px 19px;
 	overflow: hidden;
 	border: 1px solid var(--border-color-medium, rgba(120, 120, 120, .18));
-	border-radius: 12px;
+	border-radius: 6px;
 	background: var(--background-color-high, rgba(255, 255, 255, .82));
-	box-shadow: 0 4px 15px rgba(0, 0, 0, .055);
+	box-shadow: none;
 }
 
 .temp-argon-card::before {
+	z-index: 1;
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -36,12 +59,30 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 	content: '';
 }
 
+/* Background scale: 0–100 °C, clamped at either end. */
+.temp-argon-card::after {
+	content: '';
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: var(--temp-level, 0%);
+	background: var(--temp-fill);
+	z-index: -1;
+	pointer-events: none;
+}
+
 .temp-argon-card.warm {
 	--temp-accent: #f0ad4e;
+	--temp-fill: rgba(240, 173, 78, .20);
 }
 
 .temp-argon-card.hot {
 	--temp-accent: #e65353;
+	--temp-fill: rgba(230, 83, 83, .18);
+}
+
+.temp-argon-card.unavailable {
+	--temp-accent: #8a9099;
+	--temp-fill: transparent;
 }
 
 .temp-argon-meta {
@@ -61,13 +102,16 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 	opacity: .56;
 	font-size: 11px;
 	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .temp-argon-value {
 	flex: 0 0 auto;
 	margin-left: 16px;
 	color: var(--temp-accent);
-	font-size: 25px;
+	font-size: 22px;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	letter-spacing: -.5px;
@@ -86,7 +130,7 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 `));
 
 return baseclass.extend({
-	title: '硬件温度',
+	title: tempText('Hardware temperature', '硬件温度', '硬體溫度'),
 
 	sensorsData: null,
 
@@ -94,7 +138,7 @@ return baseclass.extend({
 
 	sensorsPath: [],
 
-	cpuModel: '处理器（型号读取不到）',
+	cpuModel: tempText('Unknown processor', '处理器型号未知', '處理器型號未知'),
 
 
 	callSensors: rpc.declare({
@@ -159,7 +203,7 @@ return baseclass.extend({
 					else if (sensorLower.indexOf('pch') === 0 && !selected.pch) {
 						card = {
 							key: 'pch',
-							name: '芯片组',
+							name: tempText('Chipset', '芯片组', '晶片組'),
 							desc: sensorInfo.model || sensor,
 							path: source.path,
 							warm: 75,
@@ -194,17 +238,21 @@ return baseclass.extend({
 		let cards = this.collectCards();
 
 		if (!cards.length)
-			return E('em', {}, '未找到可显示的温度传感器');
+			return E('em', {}, tempText('No temperature sensors available', '未找到温度传感器', '未找到溫度感測器'));
 
 		return E('div', { 'class': 'temp-argon-grid' }, cards.map(card => {
 			let raw = this.tempData[card.path];
-			let temp = (raw === undefined || raw === null) ? null : this.formatTemp(raw);
-			let state = temp === null ? '' : (temp >= card.hot ? ' hot' : (temp >= card.warm ? ' warm' : ''));
+			let temp = (raw === undefined || raw === null || String(raw).trim() === '' || !Number.isFinite(Number(raw))) ? null : this.formatTemp(raw);
+			let state = temp === null ? ' unavailable' : (temp >= card.hot ? ' hot' : (temp >= card.warm ? ' warm' : ''));
+			let level = temp === null ? 0 : Math.max(0, Math.min(100, temp));
 
-			return E('div', { 'class': 'temp-argon-card' + state }, [
+			return E('div', {
+				'class': 'temp-argon-card' + state,
+				'style': '--temp-level: ' + level + '%;'
+			}, [
 				E('div', { 'class': 'temp-argon-meta' }, [
 					E('span', { 'class': 'temp-argon-name' }, card.name),
-					E('span', { 'class': 'temp-argon-desc' }, card.desc)
+					E('span', { 'class': 'temp-argon-desc', 'title': card.desc }, tempModel(card.key, card.desc))
 				]),
 				E('span', { 'class': 'temp-argon-value' }, temp === null ? '--' : temp + ' °C')
 			]);
