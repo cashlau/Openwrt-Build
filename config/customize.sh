@@ -13,26 +13,24 @@ if [ ! -f "$CONFIG_FILE" ] || [ ! -f ".config" ]; then
     exit 1
 fi
 
-# -------- 查找已上传的温度卡片文件 --------
+# -------- 查找自动识别硬件型号的后台文件 --------
 
-TEMP_JS=""
+TEMP_BACKEND=""
 
 for candidate in \
-    "$SCRIPT_DIR/27_temperature_argon.js" \
-    "$PWD/27_temperature_argon.js" \
-    "$PWD/config/27_temperature_argon.js" \
-    "${GITHUB_WORKSPACE:-$PWD}/config/27_temperature_argon.js"
+    "$SCRIPT_DIR/luci.temp-status" \
+    "$PWD/luci.temp-status" \
+    "$PWD/config/luci.temp-status" \
+    "${GITHUB_WORKSPACE:-$PWD}/config/luci.temp-status"
 do
     if [ -s "$candidate" ]; then
-        TEMP_JS="$candidate"
+        TEMP_BACKEND="$candidate"
         break
     fi
 done
 
-if [ -z "$TEMP_JS" ]; then
-    echo "❌ 未找到 27_temperature_argon.js"
-    echo "请确认 config/27_temperature_argon.js 已提交到仓库，"
-    echo "且编译流程保留该文件或将它复制到源码根目录。"
+if [ -z "$TEMP_BACKEND" ]; then
+    echo "❌ 未找到 config/luci.temp-status，请先上传后台文件"
     exit 1
 fi
 
@@ -199,7 +197,10 @@ fi
 install -Dm0644 "$TEMP_JS" \
     "$TEMP_STATUS_DIR/htdocs/luci-static/resources/view/status/include/27_temperature.js"
 
-echo "✅ Argon 温度卡片源码已加入"
+install -Dm0644 "$TEMP_BACKEND" \
+    "$TEMP_STATUS_DIR/root/usr/share/rpcd/ucode/luci.temp-status"
+
+echo "✅ Argon 温度卡片及硬件型号识别后台已加入"
 
 # -------- 添加编译配置，避免重复条目 --------
 
