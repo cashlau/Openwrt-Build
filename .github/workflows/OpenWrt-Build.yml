@@ -125,7 +125,7 @@ jobs:
           for file in \
             ../config/.config \
             ../config/customize.sh \
-            ../config/27_temperature_argon.js
+            ../config/27_temperature.js
           do
             if [ ! -s "$file" ]; then
               echo "❌ Missing or empty file: $file"
