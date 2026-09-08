@@ -94,6 +94,9 @@ return baseclass.extend({
 
 	sensorsPath: [],
 
+	cpuModel: '处理器（型号读取不到）',
+
+
 	callSensors: rpc.declare({
 		object: 'luci.temp-status',
 		method: 'getSensors',
@@ -137,7 +140,7 @@ return baseclass.extend({
 						card = {
 							key: 'cpu',
 							name: 'CPU',
-							desc: 'Intel Core i3-10300T',
+							desc: sensorInfo.model || this.cpuModel,
 							path: source.path,
 							warm: 75,
 							hot: 90
@@ -147,7 +150,7 @@ return baseclass.extend({
 						card = {
 							key: 'nvme',
 							name: 'NVMe',
-							desc: '固态硬盘',
+							desc: sensorInfo.model || sensor,
 							path: source.path,
 							warm: 65,
 							hot: 80
@@ -157,7 +160,7 @@ return baseclass.extend({
 						card = {
 							key: 'pch',
 							name: '芯片组',
-							desc: 'Intel PCH',
+							desc: sensorInfo.model || sensor,
 							path: source.path,
 							warm: 75,
 							hot: 90
