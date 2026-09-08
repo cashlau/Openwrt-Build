@@ -13,6 +13,29 @@ if [ ! -f "$CONFIG_FILE" ] || [ ! -f ".config" ]; then
     exit 1
 fi
 
+# -------- 查找已上传的温度卡片文件 --------
+
+TEMP_JS=""
+
+for candidate in \
+    "$SCRIPT_DIR/27_temperature.js" \
+    "$PWD/27_temperature.js" \
+    "$PWD/config/27_temperature.js" \
+    "${GITHUB_WORKSPACE:-$PWD}/config/27_temperature.js"
+do
+    if [ -s "$candidate" ]; then
+        TEMP_JS="$candidate"
+        break
+    fi
+done
+
+if [ -z "$TEMP_JS" ]; then
+    echo "❌ 未找到 27_temperature.js"
+    echo "请确认 config/27_temperature.js 已提交到仓库，"
+    echo "且编译流程保留该文件或将它复制到源码根目录。"
+    exit 1
+fi
+
 # -------- 查找自动识别硬件型号的后台文件 --------
 
 TEMP_BACKEND=""
@@ -192,6 +215,12 @@ if [ -z "$TEMP_STATUS_DIR" ]; then
     git clone --depth=1 \
         https://github.com/gSpotx2f/luci-app-temp-status.git \
         "$TEMP_STATUS_DIR"
+fi
+
+if [ ! -s "${TEMP_JS:-}" ] || [ ! -s "${TEMP_BACKEND:-}" ]; then
+    echo "❌ 温度文件路径无效，请检查 config/27_temperature.js 和 config/luci.temp-status"
+    printf 'TEMP_JS=%s\nTEMP_BACKEND=%s\n' "${TEMP_JS:-}" "${TEMP_BACKEND:-}"
+    exit 1
 fi
 
 install -Dm0644 "$TEMP_JS" \
