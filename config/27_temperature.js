@@ -39,8 +39,8 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	min-height: 72px;
-	padding: 12px 16px 12px 19px;
+	min-height: 50px;
+	padding: 6px 12px 6px 12px;
 	overflow: hidden;
 	border: 1px solid var(--border-color-medium, rgba(120, 120, 120, .18));
 	border-radius: 6px;
