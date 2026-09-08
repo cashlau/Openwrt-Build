@@ -134,7 +134,7 @@ document.head.append(E('style', { 'type': 'text/css' }, `
 
 .temp-argon-grid.temp-dark .temp-argon-card:not(.warm):not(.hot):not(.unavailable) {
 	--temp-accent: #90ee90;
-	--temp-fill: rgba(144, 238, 144, .12);
+	--temp-fill: rgba(140, 239, 152, .1);
 }
 .temp-argon-grid.temp-dark .temp-argon-card.warm { --temp-accent: #ffd080; --temp-fill: rgba(240, 173, 78, .12); }
 .temp-argon-grid.temp-dark .temp-argon-card.hot { --temp-accent: #ff9c9c; --temp-fill: rgba(230, 83, 83, .12); }
