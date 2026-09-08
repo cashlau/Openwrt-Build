@@ -125,7 +125,8 @@ jobs:
           for file in \
             ../config/.config \
             ../config/customize.sh \
-            ../config/27_temperature.js
+            ../config/27_temperature.js \
+            ../config/luci.temp-status
           do
             if [ ! -s "$file" ]; then
               echo "❌ Missing or empty file: $file"
@@ -135,6 +136,13 @@ jobs:
 
           cp ../config/.config .config
           bash ../config/customize.sh
+
+          while IFS= read -r package; do
+            [ -n "$package" ] || continue
+            option="CONFIG_PACKAGE_$package"
+            sed -i -e "/^${option}=/d" -e "/^# ${option} is not set$/d" .config
+            printf '%s=y\n' "$option" >> .config
+          done < .external-package-options
 
       - name: Make defconfig and download sources
         if: steps.compare.outputs.should_build == 'true'
@@ -152,7 +160,10 @@ jobs:
           export GITHUB_ACTIONS=false
           export CARGO_BUILD_JOBS=2
 
-          make -j"$(nproc)" || make -j1 V=s
+          make -j"$(nproc)" || {
+            echo "⚠️ Parallel build failed; retrying single-threaded with detailed logs"
+            make -j1 V=s
+          }
 
       - name: Get build time
         if: steps.compare.outputs.should_build == 'true'
