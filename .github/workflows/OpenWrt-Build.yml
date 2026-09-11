@@ -96,7 +96,11 @@ jobs:
             gcc-multilib g++-multilib gettext git \
             libncurses-dev libssl-dev rsync unzip \
             zlib1g-dev file wget python3-pyelftools \
-            ccache ash
+            ccache ash libglib2.0-dev-bin
+
+          # Verify the host tool required by bluez-alsa.
+          command -v gdbus-codegen
+          gdbus-codegen --help >/dev/null
 
       - name: Clone OpenWrt source
         if: steps.compare.outputs.should_build == 'true'
