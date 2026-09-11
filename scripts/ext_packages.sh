@@ -24,6 +24,10 @@ clone_package package/luci-theme-argon https://github.com/jerrykuku/luci-theme-a
 clone_package package/luci-app-pushbot https://github.com/zzsj0928/luci-app-pushbot
 clone_package package/mosdns https://github.com/sbwml/luci-app-mosdns v5
 clone_package package/luci-app-netspeedtest https://github.com/muink/luci-app-netspeedtest.git master
+# 蓝牙管理及配套依赖
+clone_package package/luci-app-bluetooth https://github.com/sbwml/luci-app-bluetooth.git main
+clone_package package/expect https://github.com/sbwml/package_new_expect.git
+clone_package package/bluez-alsa https://github.com/sbwml/package_new_bluez-alsa.git main
 
 # Reuse geodata supplied by an installed feed to avoid duplicate packages.
 GEODATA_FOUND=0
@@ -65,6 +69,9 @@ luci-app-pushbot
 mosdns
 luci-app-mosdns
 luci-app-netspeedtest
+luci-app-bluetooth
+expect
+bluez-alsa
 EOF
 
 echo 'External packages and Go toolchain prepared.'
