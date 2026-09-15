@@ -284,7 +284,7 @@ return baseclass.extend({
 						card = {
 							key: 'wifi_' + wifiMatch[2],
 							name: tempText('Wi-Fi', '无线网卡', '無線網卡'),
-							desc: wifiMatch[1].toUpperCase() + ' · phy' + wifiMatch[2],
+							desc: wifiMatch[1].toUpperCase(),
 							path: source.path,
 							// Display reminders, not manufacturer safety limits.
 							warm: 75,
