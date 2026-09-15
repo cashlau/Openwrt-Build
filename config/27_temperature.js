@@ -242,6 +242,7 @@ return baseclass.extend({
 			for (let sensorInfo of Object.values(group || [])) {
 				let sensor = String(sensorInfo.title || sensorInfo.item || '');
 				let sensorLower = sensor.toLowerCase();
+				let wifiMatch = sensorLower.match(/^(mt7925)_phy([0-9]+)$/);
 
 				for (let source of Object.values(sensorInfo.sources || [])) {
 					let label = String(source.label || source.item || '').replace(/_input$/, '');
@@ -279,6 +280,18 @@ return baseclass.extend({
 						};
 					}
 
+					if (wifiMatch && !selected['wifi_' + wifiMatch[2]]) {
+						card = {
+							key: 'wifi_' + wifiMatch[2],
+							name: tempText('Wi-Fi', '无线网卡', '無線網卡'),
+							desc: wifiMatch[1].toUpperCase() + ' · phy' + wifiMatch[2],
+							path: source.path,
+							// Display reminders, not manufacturer safety limits.
+							warm: 75,
+							hot: 90
+						};
+					}
+
 					if (card)
 						selected[card.key] = card;
 				}
@@ -286,6 +299,7 @@ return baseclass.extend({
 		}
 
 		return [ 'cpu', 'nvme', 'pch' ]
+			.concat(Object.keys(selected).filter(key => key.indexOf('wifi_') === 0))
 			.map(key => selected[key])
 			.filter(Boolean);
 	},
