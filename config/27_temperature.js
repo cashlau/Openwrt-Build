@@ -3,174 +3,98 @@
 'require rpc';
 
 var tempLang = String(document.documentElement.lang || L.env.lang || 'en').toLowerCase();
+
 function tempText(en, zh, tw) {
 	return /^zh/.test(tempLang) ? (/tw|hk|hant/.test(tempLang) ? (tw || zh) : zh) : en;
 }
+
 function tempModel(kind, value) {
-	var text = String(value || '');
+	var s = String(value || '');
 	if (kind === 'cpu')
-		return text.replace(/\(R\)|\(TM\)/gi, '').replace(/\s+CPU\b/g, '').replace(/\s+@\s+.*$/, '').replace(/\s+/g, ' ').trim();
+		return s.replace(/\(R\)|\(TM\)/gi, '').replace(/\s+CPU\b/g, '').replace(/\s+@\s+.*$/, '').replace(/\s+/g, ' ').trim();
 	if (kind === 'pch') {
-		var names = { cometlake: 'Comet Lake', skylake: 'Skylake', cannonlake: 'Cannon Lake', tigerlake: 'Tiger Lake', alderlake: 'Alder Lake' };
-		return text.replace(/pch_([a-z0-9]+)/gi, function(full, family) {
-			return names[family.toLowerCase()] ? 'Intel ' + names[family.toLowerCase()] + ' PCH' : full;
-		});
+		var n = { cometlake:'Comet Lake', skylake:'Skylake', cannonlake:'Cannon Lake', tigerlake:'Tiger Lake', alderlake:'Alder Lake' };
+		return s.replace(/pch_([a-z0-9]+)/gi, (m, f) => n[f.toLowerCase()] ? 'Intel ' + n[f.toLowerCase()] + ' PCH' : m);
 	}
-	return text;
+	return s;
 }
 
-/* Compact temperature cards for the LuCI status overview (Argon friendly). */
-document.head.append(E('style', { 'type': 'text/css' }, `
-.temp-argon-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-	gap: 10px;
-	padding: 12px 16px;
-	margin: 0;
-	width: 100%;
-	box-sizing: border-box;
+document.head.append(E('style', { type:'text/css' }, `
+.temp-argon-grid{
+	display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+	gap:8px 24px;width:100%;padding:7px 14px 10px;margin:0;box-sizing:border-box
 }
-
-.temp-argon-card {
-	--temp-accent: #238636;
-	--temp-stripe: #90ee90;
-	--temp-fill: rgba(140, 239, 152, 1);
-	isolation: isolate;
-	box-sizing: border-box;
-	min-width: 0;
-	position: relative;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	height: 48px;
-	min-height: 48px;
-	padding: 6px 12px 6px 14px;
-	overflow: hidden;
-	border: 1px solid var(--border-color-medium, rgba(120, 120, 120, .18));
-	border-radius: 6px;
-	background: var(--background-color-high, rgba(255, 255, 255, .82));
-	box-shadow: none;
+.temp-argon-card{
+	--temp-accent:#78dc91;--temp-track:#e5e9ed;
+	display:grid;grid-template-columns:max-content minmax(0,1fr);
+	align-items:center;column-gap:6px;width:100%;min-width:0;height:30px;
+	padding:0;margin:0;background:transparent;border:0;box-shadow:none;box-sizing:border-box
 }
-
-.temp-argon-card::before {
-	z-index: 1;
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	width: 4px;
-	background: var(--temp-stripe);
-	content: '';
+.temp-argon-meta{display:flex;align-items:center;min-width:0}
+.temp-argon-name{font-size:13px;font-weight:600;line-height:1;color:#27334b;white-space:nowrap}
+.temp-argon-progress{
+	position:relative;width:100%;height:18px;min-width:0;overflow:hidden;
+	background:var(--temp-track);border-radius:9px
 }
-
-/* Background scale: 0–100 °C, clamped at either end. */
-.temp-argon-card::after {
-	content: '';
-	position: absolute;
-	inset: 0 auto 0 0;
-	width: var(--temp-level, 0%);
-	background: var(--temp-fill);
-	z-index: -1;
-	pointer-events: none;
+.temp-argon-fill{
+	position:absolute;z-index:1;inset:0;width:100%;background:var(--temp-accent);
+	border-radius:9px 2px 2px 9px;
+	transform:scaleX(var(--temp-scale,0));transform-origin:left center;
+	transition:transform .45s cubic-bezier(.4,0,.2,1),background-color .25s ease;
+	will-change:transform
 }
-
-.temp-argon-card.warm {
-	--temp-accent: #b86808;
-	--temp-stripe: #f0ad4e;
-	--temp-fill: rgba(240, 173, 78, .20);
+.temp-argon-progress-text{
+	position:absolute;z-index:2;inset:0;display:flex;align-items:center;
+	justify-content:space-between;gap:8px;padding:0 8px;box-sizing:border-box;
+	color:#26334a;font-size:10.5px;line-height:18px;pointer-events:none
 }
+.temp-argon-model{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.temp-argon-value{flex:0 0 auto;margin-left:6px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-.temp-argon-card.hot {
-	--temp-accent: #dc2626;
-	--temp-stripe: #e65353;
-	--temp-fill: rgba(230, 83, 83, .18);
+.temp-argon-card.warm{--temp-accent:#efb95e}
+.temp-argon-card.hot{--temp-accent:#e87878}
+.temp-argon-card.unavailable{--temp-accent:#aeb6c0}
+
+.temp-argon-grid.temp-dark .temp-argon-card{--temp-track:#3b3f45}
+.temp-argon-grid.temp-dark .temp-argon-name{color:#eef2f7}
+.temp-argon-grid.temp-dark .temp-argon-progress-text{color:#e6edf3}
+.temp-argon-grid.temp-dark .temp-argon-card:not(.warm):not(.hot):not(.unavailable){--temp-accent:#508b5e}
+.temp-argon-grid.temp-dark .temp-argon-card.warm{--temp-accent:#8c6b35}
+.temp-argon-grid.temp-dark .temp-argon-card.hot{--temp-accent:#934a4a}
+.temp-argon-grid.temp-dark .temp-argon-card.unavailable{--temp-accent:#676e77}
+
+@media(max-width:1100px){
+	.temp-argon-grid{grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px 18px}
 }
-
-.temp-argon-card.unavailable {
-	--temp-accent: #8a9099;
-	--temp-stripe: #8a9099;
-	--temp-fill: transparent;
-}
-
-.temp-argon-meta {
-	min-width: 0;
-}
-
-.temp-argon-name {
-	display: block;
-	font-size: 13px;
-	font-weight: 600;
-	line-height: 1.35;
-}
-
-.temp-argon-desc {
-	display: block;
-	margin-top: 2px;
-	opacity: 1;
-	color: #586174;
-	font-size: 11px;
-	line-height: 1.2;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.temp-argon-value {
-	flex: 0 0 auto;
-	margin-left: 10px;
-	color: var(--temp-accent);
-	font-size: 20px;
-	line-height: 1.2;
-	font-weight: 700;
-	font-variant-numeric: tabular-nums;
-	letter-spacing: -.5px;
-}
-
-.temp-argon-grid.temp-dark .temp-argon-card {
-	background: #252525;
-	border-color: #404040;
-	box-shadow: none;
-}
-
-.temp-argon-grid.temp-dark .temp-argon-card:not(.warm):not(.hot):not(.unavailable) {
-	--temp-accent: #90ee90;
-	--temp-fill: rgba(144, 238, 144, .12);
-}
-.temp-argon-grid.temp-dark .temp-argon-card.warm { --temp-accent: #ffd080; --temp-fill: rgba(240, 173, 78, .12); }
-.temp-argon-grid.temp-dark .temp-argon-card.hot { --temp-accent: #ff9c9c; --temp-fill: rgba(230, 83, 83, .12); }
-.temp-argon-grid.temp-dark .temp-argon-card.unavailable { --temp-accent: #c3ccd8; }
-.temp-argon-grid.temp-dark .temp-argon-name { color: #f1f5f9; }
-.temp-argon-grid.temp-dark .temp-argon-desc { color: #c3ccd8; }
-
-@media (max-width: 600px) {
-	.temp-argon-grid {
-		grid-template-columns: 1fr;
-	}
+@media(max-width:600px){
+	.temp-argon-grid{grid-template-columns:1fr;gap:6px;padding:7px 10px 9px}
+	.temp-argon-card{grid-template-columns:64px minmax(0,1fr);column-gap:6px;height:28px}
+	.temp-argon-name{font-size:12px}
+	.temp-argon-progress{height:17px}
+	.temp-argon-progress-text{padding:0 7px;font-size:10px;line-height:17px}
+	.temp-argon-value{margin-left:5px;font-size:10.5px}
 }
 `));
 
 function syncTempTheme() {
 	document.querySelectorAll('.temp-argon-grid').forEach(grid => {
-		let dark = false;
-		let explicit = document.documentElement.getAttribute('data-darkmode');
+		let dark = false, explicit = document.documentElement.getAttribute('data-darkmode');
 		if (explicit !== 'true' && explicit !== 'false')
 			explicit = document.body && document.body.getAttribute('data-darkmode');
-		if (explicit === 'true' || explicit === 'false') {
-			dark = explicit === 'true';
-		} else {
-			for (let parent = grid.parentElement; parent; parent = parent.parentElement) {
-				let rgb = getComputedStyle(parent).backgroundColor.match(/[\d.]+/g);
-				if (!rgb || rgb.length < 3 || (rgb.length > 3 && Number(rgb[3]) < .9)) continue;
-				dark = (Number(rgb[0]) * .2126 + Number(rgb[1]) * .7152 + Number(rgb[2]) * .0722) < 128;
+
+		if (explicit === 'true' || explicit === 'false') dark = explicit === 'true';
+		else {
+			for (let p = grid.parentElement; p; p = p.parentElement) {
+				let rgb = getComputedStyle(p).backgroundColor.match(/[\d.]+/g);
+				if (!rgb || rgb.length < 3 || (rgb.length > 3 && +rgb[3] < .9)) continue;
+				dark = (+rgb[0] * .2126 + +rgb[1] * .7152 + +rgb[2] * .0722) < 128;
 				break;
 			}
 		}
-		if (grid.classList.contains('temp-dark') !== dark)
-			grid.classList.toggle('temp-dark', dark);
+		grid.classList.toggle('temp-dark', dark);
 	});
 }
 
-// Keep theme changes independent of the temperature polling interval.
 var tempThemeFrame = null;
 function scheduleTempTheme() {
 	if (tempThemeFrame !== null) return;
@@ -179,47 +103,39 @@ function scheduleTempTheme() {
 		syncTempTheme();
 	});
 }
-var tempThemeObserver = new MutationObserver(records => {
-	if (records.some(record => !(record.target instanceof Element) || !record.target.closest('.temp-argon-grid')))
-		scheduleTempTheme();
+
+new MutationObserver(scheduleTempTheme).observe(document.documentElement, {
+	subtree:true, attributes:true,
+	attributeFilter:['class','style','data-darkmode','data-theme']
 });
-tempThemeObserver.observe(document.documentElement, {
-	subtree: true, attributes: true, childList: true,
-	attributeFilter: [ 'class', 'style', 'data-darkmode', 'data-theme', 'href', 'media', 'disabled' ]
-});
-var tempColorScheme = window.matchMedia('(prefers-color-scheme: dark)');
-if (tempColorScheme.addEventListener)
-	tempColorScheme.addEventListener('change', scheduleTempTheme);
-else
-	tempColorScheme.addListener(scheduleTempTheme);
-document.addEventListener('transitionend', scheduleTempTheme, true);
-document.addEventListener('load', event => {
-	if (event.target instanceof HTMLLinkElement) scheduleTempTheme();
-}, true);
+
+var tempColorScheme = window.matchMedia('(prefers-color-scheme:dark)');
+if (tempColorScheme.addEventListener) tempColorScheme.addEventListener('change', scheduleTempTheme);
+else tempColorScheme.addListener(scheduleTempTheme);
 
 return baseclass.extend({
 	title: tempText('Hardware temperature', '硬件温度', '硬體溫度'),
 
-	sensorsData: null,
+	sensorsData:null,
+	tempData:null,
+	sensorsPath:[],
+	tempGrid:null,
+	tempNodes:null,
+	tempSignature:null,
 
-	tempData: null,
+	cpuModel:tempText('Unknown processor', '处理器型号未知', '處理器型號未知'),
 
-	sensorsPath: [],
-
-	cpuModel: tempText('Unknown processor', '处理器型号未知', '處理器型號未知'),
-
-
-	callSensors: rpc.declare({
-		object: 'luci.temp-status',
-		method: 'getSensors',
-		expect: { '': {} }
+	callSensors:rpc.declare({
+		object:'luci.temp-status',
+		method:'getSensors',
+		expect:{'':{}}
 	}),
 
-	callTempData: rpc.declare({
-		object: 'luci.temp-status',
-		method: 'getTempData',
-		params: [ 'tpaths' ],
-		expect: { '': {} }
+	callTempData:rpc.declare({
+		object:'luci.temp-status',
+		method:'getTempData',
+		params:['tpaths'],
+		expect:{'':{}}
 	}),
 
 	formatTemp(mc) {
@@ -227,9 +143,7 @@ return baseclass.extend({
 	},
 
 	load() {
-		if (!this.sensorsData)
-			return L.resolveDefault(this.callSensors(), null);
-
+		if (!this.sensorsData) return L.resolveDefault(this.callSensors(), null);
 		return this.sensorsPath.length
 			? L.resolveDefault(this.callTempData(this.sensorsPath), null)
 			: Promise.resolve(null);
@@ -238,70 +152,95 @@ return baseclass.extend({
 	collectCards() {
 		let selected = {};
 
-		for (let group of Object.values(this.sensorsData || {})) {
+		for (let group of Object.values(this.sensorsData || {}))
 			for (let sensorInfo of Object.values(group || [])) {
 				let sensor = String(sensorInfo.title || sensorInfo.item || '');
-				let sensorLower = sensor.toLowerCase();
-				let wifiMatch = sensorLower.match(/^(mt7925)_phy([0-9]+)$/);
+				let sl = sensor.toLowerCase();
+				let wifi = sl.match(/^(.+)_phy([0-9]+)$/);
 
 				for (let source of Object.values(sensorInfo.sources || [])) {
-					let label = String(source.label || source.item || '').replace(/_input$/, '');
-					let labelLower = label.toLowerCase();
+					let label = String(source.label || source.item || '').replace(/_input$/, '').toLowerCase();
 					let card = null;
 
-					if (sensorLower === 'coretemp' && labelLower.indexOf('package id') !== -1) {
-						card = {
-							key: 'cpu',
-							name: 'CPU',
-							desc: sensorInfo.model || this.cpuModel,
-							path: source.path,
-							warm: 75,
-							hot: 90
-						};
-					}
-					else if (sensorLower === 'nvme' && (labelLower === 'composite' || !selected.nvme)) {
-						card = {
-							key: 'nvme',
-							name: 'NVMe',
-							desc: sensorInfo.model || sensor,
-							path: source.path,
-							warm: 65,
-							hot: 80
-						};
-					}
-					else if (sensorLower.indexOf('pch') === 0 && !selected.pch) {
-						card = {
-							key: 'pch',
-							name: tempText('Chipset', '芯片组', '晶片組'),
-							desc: sensorInfo.model || sensor,
-							path: source.path,
-							warm: 75,
-							hot: 90
-						};
-					}
+					if (sl === 'coretemp' && label.includes('package id'))
+						card = { key:'cpu', name:'CPU', desc:sensorInfo.model || this.cpuModel, path:source.path, warm:75, hot:90 };
 
-					if (wifiMatch && !selected['wifi_' + wifiMatch[2]]) {
-						card = {
-							key: 'wifi_' + wifiMatch[2],
-							name: tempText('Wi-Fi', '无线网卡', '無線網卡'),
-							desc: wifiMatch[1].toUpperCase(),
-							path: source.path,
-							// Display reminders, not manufacturer safety limits.
-							warm: 75,
-							hot: 90
-						};
-					}
+					else if (sl === 'nvme' && (label === 'composite' || !selected.nvme))
+						card = { key:'nvme', name:'NVMe', desc:sensorInfo.model || sensor, path:source.path, warm:65, hot:80 };
 
-					if (card)
-						selected[card.key] = card;
+					else if (sl.startsWith('pch') && !selected.pch)
+						card = { key:'pch', name:tempText('Chipset','芯片组','晶片組'), desc:sensorInfo.model || sensor, path:source.path, warm:75, hot:90 };
+
+					if (wifi && !selected['wifi_' + wifi[2]])
+						card = {
+							key:'wifi_' + wifi[2],
+							name:tempText('Wi-Fi','无线网卡','無線網卡'),
+							desc:wifi[1].toUpperCase(),
+							path:source.path, warm:75, hot:90
+						};
+
+					if (card) selected[card.key] = card;
 				}
 			}
-		}
 
-		return [ 'cpu', 'nvme', 'pch' ]
-			.concat(Object.keys(selected).filter(key => key.indexOf('wifi_') === 0))
-			.map(key => selected[key])
+		return ['cpu','nvme','pch']
+			.concat(Object.keys(selected).filter(k => k.startsWith('wifi_')))
+			.map(k => selected[k])
 			.filter(Boolean);
+	},
+
+	updateCards(cards) {
+		for (let card of cards) {
+			let raw = this.tempData[card.path];
+			let temp = raw == null || String(raw).trim() === '' || !Number.isFinite(Number(raw))
+				? null : this.formatTemp(raw);
+
+			let state = temp == null ? ' unavailable'
+				: temp >= card.hot ? ' hot'
+				: temp >= card.warm ? ' warm' : '';
+
+			let level = temp == null ? 0 : Math.max(0, Math.min(100, temp));
+			let n = this.tempNodes && this.tempNodes[card.key];
+			if (!n) continue;
+
+			n.row.className = 'temp-argon-card' + state;
+			n.fill.style.setProperty('--temp-scale', level / 100);
+			n.model.textContent = tempModel(card.key, card.desc);
+			n.model.title = card.desc;
+			n.value.textContent = temp == null ? '--' : temp + ' °C';
+		}
+	},
+
+	createGrid(cards) {
+		this.tempNodes = {};
+
+		this.tempGrid = E('div', {'class':'temp-argon-grid'}, cards.map(card => {
+			let fill = E('div', {'class':'temp-argon-fill','style':'--temp-scale:0;transition:none;'});
+			let model = E('span', {'class':'temp-argon-model','title':card.desc}, tempModel(card.key, card.desc));
+			let value = E('span', {'class':'temp-argon-value'}, '--');
+
+			let row = E('div', {'class':'temp-argon-card'}, [
+				E('div', {'class':'temp-argon-meta'}, [
+					E('span', {'class':'temp-argon-name'}, card.name)
+				]),
+				E('div', {'class':'temp-argon-progress'}, [
+					fill,
+					E('div', {'class':'temp-argon-progress-text'}, [model, value])
+				])
+			]);
+
+			this.tempNodes[card.key] = { row, fill, model, value };
+			return row;
+		}));
+
+		this.updateCards(cards);
+
+		requestAnimationFrame(() => requestAnimationFrame(() => {
+			for (let n of Object.values(this.tempNodes || {}))
+				n.fill.style.transition = '';
+		}));
+
+		return this.tempGrid;
 	},
 
 	render(data) {
@@ -310,36 +249,25 @@ return baseclass.extend({
 				this.sensorsData = data.sensors || {};
 				this.sensorsPath = data.temp ? Object.keys(data.temp) : [];
 			}
-
 			this.tempData = data.temp || {};
 		}
 
-		if (!this.sensorsData || !this.tempData)
-			return;
+		if (!this.sensorsData || !this.tempData) return;
 
 		let cards = this.collectCards();
-
 		if (!cards.length)
-			return E('em', {}, tempText('No temperature sensors available', '未找到温度传感器', '未找到溫度感測器'));
+			return E('em', {}, tempText('No temperature sensors available','未找到温度传感器','未找到溫度感測器'));
 
-		let grid = E('div', { 'class': 'temp-argon-grid' }, cards.map(card => {
-			let raw = this.tempData[card.path];
-			let temp = (raw === undefined || raw === null || String(raw).trim() === '' || !Number.isFinite(Number(raw))) ? null : this.formatTemp(raw);
-			let state = temp === null ? ' unavailable' : (temp >= card.hot ? ' hot' : (temp >= card.warm ? ' warm' : ''));
-			let level = temp === null ? 0 : Math.max(0, Math.min(100, temp));
+		let signature = cards.map(c => c.key + ':' + c.path).join('|');
 
-			return E('div', {
-				'class': 'temp-argon-card' + state,
-				'style': '--temp-level: ' + level + '%;'
-			}, [
-				E('div', { 'class': 'temp-argon-meta' }, [
-					E('span', { 'class': 'temp-argon-name' }, card.name),
-					E('span', { 'class': 'temp-argon-desc', 'title': card.desc }, tempModel(card.key, card.desc))
-				]),
-				E('span', { 'class': 'temp-argon-value' }, temp === null ? '--' : temp + ' °C')
-			]);
-		}));
+		if (!this.tempGrid || this.tempSignature !== signature) {
+			this.tempSignature = signature;
+			this.createGrid(cards);
+		} else {
+			this.updateCards(cards);
+		}
+
 		scheduleTempTheme();
-		return grid;
+		return this.tempGrid;
 	}
 });
