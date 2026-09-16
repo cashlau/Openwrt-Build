@@ -22,8 +22,8 @@ You can download the prebuilt firmware directly, or **Fork this repository** and
 
 - **Passwall**: Proxy management and traffic routing
 - **MosDNS**: DNS routing, optimization, and ad-domain filtering
-- **All-in-One Push**: Notifications for WeChat, DingTalk, Telegram, and more
-- **WOL**: Etherwake and Wake-on-LAN support
+- **PushBot**: Notifications for WeChat, DingTalk, Telegram, and more
+- **Wake on LAN**: Etherwake and Wake-on-LAN support
 - **Dynamic DNS**: Automatically updates DNS records for dynamic public IP addresses
 - **Nikki**: Mihomo-based transparent proxy manager
 - **Momo**: Sing-Box-based transparent proxy manager
