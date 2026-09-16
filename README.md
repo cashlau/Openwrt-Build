@@ -46,7 +46,8 @@
 ---
 
 ### 主页预览
-<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/49072c11-a295-497d-85ba-98768fc7b63b" />
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/d1113720-7e16-4141-96b0-54ab1d87240c" />
+
 
 
 
