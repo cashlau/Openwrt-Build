@@ -58,7 +58,9 @@ Fork 本專案 → 修改設定 → 開啟 **Actions** → **Run workflow** → 
 
 本專案僅供 OpenWrt 學習、研究及個人設備使用。韌體基於 OpenWrt 官方原始碼及第三方開源外掛建置，不保證第三方外掛的安全性、穩定性或相容性。刷寫前請先備份重要資料並確認設備相容性。
 
-###首頁預覽
+---
+
+### 首頁預覽
 
 <img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/535a58fc-8838-4473-b146-71cb28f683a0" />
 
