@@ -13,6 +13,40 @@ if [ ! -f "$CONFIG_FILE" ] || [ ! -f ".config" ]; then
     exit 1
 fi
 
+# -------- 固定使用 MT7925 20260605 Wi-Fi 固件 --------
+
+MT7925_FW_COMMIT="bd1c66cf"
+MT7925_FW_BASE="https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware/+/${MT7925_FW_COMMIT}/mediatek/mt7925"
+MT7925_FW_DEST="files/lib/firmware/mediatek/mt7925"
+
+mkdir -p "$MT7925_FW_DEST"
+
+for firmware in \
+    WIFI_MT7925_PATCH_MCU_1_1_hdr.bin \
+    WIFI_RAM_CODE_MT7925_1_1.bin
+do
+    wget -qO- "${MT7925_FW_BASE}/${firmware}?format=TEXT" |
+        base64 -d > "${MT7925_FW_DEST}/${firmware}"
+
+    if [ ! -s "${MT7925_FW_DEST}/${firmware}" ]; then
+        echo "❌ MT7925 固件下载失败：${firmware}"
+        exit 1
+    fi
+done
+
+(
+    cd "$MT7925_FW_DEST"
+
+    echo "089dd0252a7eb95feed55950ad0fd9e6f751a07b4cf22273de722b73fa50d49e  WIFI_MT7925_PATCH_MCU_1_1_hdr.bin" |
+        sha256sum -c -
+
+    echo "7e4ed27d1e9fe21cdefda35a22da32137b2473fada350617fb603489af19346a  WIFI_RAM_CODE_MT7925_1_1.bin" |
+        sha256sum -c -
+)
+
+echo "✅ MT7925 20260605 Wi-Fi 固件已写入镜像覆盖目录"
+
+
 # -------- 查找已上传的温度卡片文件 --------
 
 TEMP_JS=""
