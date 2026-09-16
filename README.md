@@ -58,6 +58,8 @@ Fork 本仓库 → 修改配置 → 打开 **Actions** → **Run workflow** → 
 
 本项目仅供 OpenWrt 学习、研究及个人设备使用。固件基于 OpenWrt 官方源码及第三方开源插件构建，不对第三方插件的安全性、稳定性和兼容性作保证。刷写前请备份重要数据并确认设备兼容性。
 
+---
+
 ### 主页预览
 
 <img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/b384eb96-0c18-4a43-a084-0f3f25ac5874" />
