@@ -57,3 +57,7 @@ Fork this repository → edit the configuration → open **Actions** → click *
 ### Disclaimer
 
 This project is intended for OpenWrt learning, research, and personal use. Firmware is built from official OpenWrt source together with third-party open-source packages. No guarantee is made regarding the security, stability, or compatibility of third-party packages. Back up important data and confirm hardware compatibility before flashing.
+
+### Homepage Preview
+
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/c18197b7-25f0-4156-9105-a3e84a8d308f" />
