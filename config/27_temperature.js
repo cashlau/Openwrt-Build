@@ -11,10 +11,12 @@ function tempText(en,zh,tw){
 function tempModel(kind,value){
 	var s=String(value||'');
 	if(kind==='cpu') return s.replace(/\(R\)|\(TM\)/gi,'').replace(/\s+CPU\b/g,'').replace(/\s+@\s+.*$/,'').replace(/\s+/g,' ').trim();
+
 	if(kind==='pch'){
 		var n={cometlake:'Comet Lake',skylake:'Skylake',cannonlake:'Cannon Lake',tigerlake:'Tiger Lake',alderlake:'Alder Lake'};
 		return s.replace(/pch_([a-z0-9]+)/gi,(m,f)=>n[f.toLowerCase()]?'Intel '+n[f.toLowerCase()]+' PCH':m);
 	}
+
 	if(kind.indexOf('wifi_')===0) return s.replace(/[\s_.·-]*phy\d+\s*$/i,'').trim();
 	return s;
 }
@@ -83,14 +85,19 @@ function syncTempLayout(grid){
 	if(!grid) return;
 	let cards=Array.from(grid.children);
 	if(cards.length<2) return grid.classList.add('temp-wrapped');
+
 	let top=cards[0].offsetTop;
 	grid.classList.toggle('temp-wrapped',!cards.every(card=>Math.abs(card.offsetTop-top)<2));
 }
 
 var tempThemeFrame=null;
+
 function scheduleTempTheme(){
 	if(tempThemeFrame!==null) return;
-	tempThemeFrame=requestAnimationFrame(()=>{tempThemeFrame=null;syncTempTheme();});
+	tempThemeFrame=requestAnimationFrame(()=>{
+		tempThemeFrame=null;
+		syncTempTheme();
+	});
 }
 
 new MutationObserver(scheduleTempTheme).observe(document.documentElement,{
@@ -107,7 +114,7 @@ return baseclass.extend({
 	sensorsData:null,tempData:null,sensorsPath:[],
 	tempGrid:null,tempNodes:null,tempSignature:null,tempResizeObserver:null,
 
-	tempUnit:localStorage.getItem('temp-unit')==='F'?'F':'C',
+	tempUnit:'C',
 	tempUnitSwitch:null,tempUnitC:null,tempUnitF:null,
 
 	cpuModel:tempText('Unknown processor','处理器型号未知','處理器型號未知'),
@@ -118,6 +125,14 @@ return baseclass.extend({
 
 	callTempData:rpc.declare({
 		object:'luci.temp-status',method:'getTempData',params:['tpaths'],expect:{'':{}}
+	}),
+
+	callGetUnit:rpc.declare({
+		object:'luci.temp-status',method:'getUnit',expect:{'':{}}
+	}),
+
+	callSetUnit:rpc.declare({
+		object:'luci.temp-status',method:'setUnit',params:['unit'],expect:{'':{}}
 	}),
 
 	formatTemp(mc){
@@ -132,11 +147,14 @@ return baseclass.extend({
 	},
 
 	setTempUnit(unit){
+		unit=unit==='F'?'F':'C';
 		this.tempUnit=unit;
-		localStorage.setItem('temp-unit',unit);
+
 		if(this.tempUnitC) this.tempUnitC.classList.toggle('active',unit==='C');
 		if(this.tempUnitF) this.tempUnitF.classList.toggle('active',unit==='F');
 		if(this.tempData) this.updateCards(this.collectCards());
+
+		L.resolveDefault(this.callSetUnit(unit),null);
 	},
 
 	attachUnitSwitch(){
@@ -156,11 +174,13 @@ return baseclass.extend({
 			]);
 
 			this.tempUnitC.addEventListener('click',e=>{
-				e.preventDefault();e.stopPropagation();this.setTempUnit('C');
+				e.preventDefault();e.stopPropagation();
+				this.setTempUnit('C');
 			});
 
 			this.tempUnitF.addEventListener('click',e=>{
-				e.preventDefault();e.stopPropagation();this.setTempUnit('F');
+				e.preventDefault();e.stopPropagation();
+				this.setTempUnit('F');
 			});
 		}
 
@@ -183,7 +203,16 @@ return baseclass.extend({
 	},
 
 	load(){
-		if(!this.sensorsData) return L.resolveDefault(this.callSensors(),null);
+		if(!this.sensorsData){
+			return Promise.all([
+				L.resolveDefault(this.callSensors(),null),
+				L.resolveDefault(this.callGetUnit(),{unit:'C'})
+			]).then(result=>{
+				let data=result[0]||{};
+				data.unit=result[1]&&result[1].unit==='F'?'F':'C';
+				return data;
+			});
+		}
 
 		return this.sensorsPath.length
 			? L.resolveDefault(this.callTempData(this.sensorsPath),null)
@@ -301,7 +330,9 @@ return baseclass.extend({
 			if(!this.sensorsData){
 				this.sensorsData=data.sensors||{};
 				this.sensorsPath=data.temp?Object.keys(data.temp):[];
+				this.tempUnit=data.unit==='F'?'F':'C';
 			}
+
 			this.tempData=data.temp||{};
 		}
 
