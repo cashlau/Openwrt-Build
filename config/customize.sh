@@ -6,7 +6,11 @@ set -e
 
 CONFIG_FILE="package/base-files/files/bin/config_generate"
 LUCIMK="feeds/luci/collections/luci/Makefile"
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+TEMP_STATUS_SRC="$REPO_ROOT/luci-app-temp-status"
 
 if [ ! -f "$CONFIG_FILE" ] || [ ! -f ".config" ]; then
     echo "❌ 请在已有 .config 的 OpenWrt 源码根目录执行本脚本"
