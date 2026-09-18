@@ -24,7 +24,7 @@ You can download the prebuilt firmware directly, or **Fork this repository** and
 - **MosDNS**: DNS routing, optimization, and ad-domain filtering
 - **PushBot**: Notifications for WeChat, DingTalk, Telegram, and more
 - **Wake on LAN**: Etherwake and Wake-on-LAN support
-- **Dynamic DNS**: Automatically updates DNS records for dynamic public IP addresses
+- **Dynamic DNS**: Automatically updates DNS records when the public IP address changes
 - **Nikki**: Mihomo-based transparent proxy manager
 - **Momo**: Sing-Box-based transparent proxy manager
 - **rtp2httpd**: Converts IPTV RTP / UDP streams to HTTP
