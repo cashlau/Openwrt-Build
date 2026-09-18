@@ -1,6 +1,6 @@
 # OpenWrt x86_64 Build
 
-[简体中文](README.md) | [English](README.en.md) | 正體中文
+[簡體中文](README.md) | [English](README.en.md) | 正體中文
 
 基於官方 OpenWrt 原始碼，透過 GitHub Actions 自動編譯整合常用外掛的 **x86_64 韌體**，並發佈至 GitHub Releases。
 
