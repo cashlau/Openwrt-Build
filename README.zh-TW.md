@@ -17,7 +17,7 @@
 
 - 自動取得 OpenWrt 官方最新穩定版原始碼並使用 GitHub Actions 編譯
 - 預設採用 **Argon LuCI 主題**，提供更現代化的 Web 管理介面
-- 支援 English、简体中文、正體中文
+- 支援 正體中文、简体中文、English
 - 預設使用 **PPPoE** 撥號，LAN 位址：`192.168.50.1`
 - 支援 **Intel X710 萬兆網路卡**
 - 支援查看 CPU、NVMe、晶片組及部分無線網路卡溫度
