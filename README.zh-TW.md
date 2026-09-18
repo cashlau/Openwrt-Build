@@ -2,7 +2,7 @@
 
 [簡體中文](README.md) | [English](README.en.md) | [正體中文](README.zh-TW.md)
 
-[![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
+[![OpenWrt Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=OpenWrt%20Release&style=flat-square)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
 
 基於官方 OpenWrt 原始碼，透過 GitHub Actions 自動編譯整合常用插件的 x86_64 韌體，並發佈至 GitHub Releases。
 
