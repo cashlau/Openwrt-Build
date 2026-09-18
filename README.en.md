@@ -17,7 +17,7 @@ You can download and use the prebuilt firmware directly, or **fork this reposito
 
 - Automatically tracks the latest stable OpenWrt source and builds with GitHub Actions
 - Uses the **Argon LuCI theme** by default, providing a more modern web management interface
-- Supports English, Simplified Chinese, and Traditional Chinese
+- Uses Supports English, Simplified Chinese, and Traditional Chinese
 - Uses **PPPoE** by default. On multi-port devices, **eth1** is assigned as the WAN interface and the remaining physical Ethernet interfaces are used as LAN; if these conditions are not met, the default OpenWrt network configuration is preserved
 - Includes support for **Intel X710 10GbE adapters**
 - Shows temperatures for CPU, NVMe, chipset, and some wireless adapters
