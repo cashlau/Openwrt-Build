@@ -1,8 +1,10 @@
 # OpenWrt x86_64 Build
 
-[简体中文](README.md) | English | [正體中文](README.zh-TW.md)
+[简体中文](README.md) | [English](README.en.md) | [正體中文](README.zh-TW.md)
 
-Automatically builds an **x86_64 OpenWrt firmware** from the official OpenWrt source using GitHub Actions, with commonly used packages included and releases published to GitHub Releases.
+[![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
+
+Automatically builds OpenWrt x86_64 firmware from the official OpenWrt source with commonly used packages via GitHub Actions, and publishes the builds to GitHub Releases.
 
 You can download the prebuilt firmware directly, or **Fork this repository** and customize packages, configuration, and build options for your own hardware. **ChatGPT**, **Claude**, or other AI tools can also help with dependency and configuration changes.
 
