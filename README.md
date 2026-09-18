@@ -24,7 +24,7 @@
 - **MosDNS**：DNS 分流、优化及广告域名过滤
 - **全能推送**：微信、钉钉、Telegram 等消息通知
 - **WOL 网络唤醒**：支持 Etherwake、Wake-on-LAN
-- **动态 DNS**：自动更新动态公网 IP
+- **动态 DNS**：公网 IP 变化时自动更新域名解析记录
 - **Nikki**：基于 Mihomo 的透明代理管理插件
 - **Momo**：基于 sing-box 的透明代理管理插件
 - **rtp2httpd**：IPTV RTP / UDP 转 HTTP
