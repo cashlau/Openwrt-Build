@@ -43,12 +43,13 @@
 
 ## 使用方法
 
+固件下载：https://github.com/cashlau/OpenWrt-Build/releases
+
 浏览器访问：`http://192.168.50.1`
 
 - 默认用户名：`root`
 - 默认密码：空
 - 首次登录后请立即设置密码
-固件下载：https://github.com/cashlau/OpenWrt-Build/releases
 
 ### 自行编译
 
