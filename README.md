@@ -39,7 +39,7 @@
 
 浏览器访问：`http://192.168.50.1`  
 默认用户名：`root`，首次登录请设置密码。  
-固件下载：https://github.com/cashlau/Openwrt-Build/releases
+固件下载：https://github.com/cashlau/OpenWrt-Build/releases
 
 ### 自行编译
 
