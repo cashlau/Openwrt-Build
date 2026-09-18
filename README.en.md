@@ -18,7 +18,7 @@ You can download and use the prebuilt firmware directly, or **fork this reposito
 - Automatically tracks the latest stable OpenWrt source and builds with GitHub Actions
 - Uses the **Argon LuCI theme** by default, providing a more modern web management interface
 - Supports English, Simplified Chinese, and Traditional Chinese
-- Uses **PPPoE** by default; LAN address: `192.168.50.1`
+- Uses **PPPoE** by default. On multi-port devices, **eth1** is assigned as the WAN interface and the remaining physical Ethernet interfaces are used as LAN; if these conditions are not met, the default OpenWrt network configuration is preserved
 - Includes support for **Intel X710 10GbE adapters**
 - Shows temperatures for CPU, NVMe, chipset, and some wireless adapters
 - Automatically checks and builds every Wednesday
@@ -41,10 +41,13 @@ Package and feed configuration can be found in `scripts/ext_packages.sh` and `fe
 
 ---
 
-### Usage
+## Usage
 
-Open: `http://192.168.50.1`  
-Default username: `root`. Please set a password after first login.  
+Open in your browser: `http://192.168.50.1`
+
+- Default username: `root`
+- Default password: blank
+- Please set a password immediately after your first login
 Firmware downloads: https://github.com/cashlau/OpenWrt-Build/releases
 
 ### Build It Yourself
