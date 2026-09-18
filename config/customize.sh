@@ -17,6 +17,25 @@ if [ ! -f "$CONFIG_FILE" ] || [ ! -f ".config" ]; then
     exit 1
 fi
 
+
+# -------- 检查自有 luci-app-temp-status --------
+
+for file in \
+    "$TEMP_STATUS_SRC/Makefile" \
+    "$TEMP_STATUS_SRC/LICENSE" \
+    "$TEMP_STATUS_SRC/htdocs/luci-static/resources/view/status/include/27_temperature.js" \
+    "$TEMP_STATUS_SRC/root/usr/share/rpcd/ucode/luci.temp-status" \
+    "$TEMP_STATUS_SRC/root/usr/share/rpcd/acl.d/luci-app-temp-status.json"
+do
+    if [ ! -s "$file" ]; then
+        echo "❌ 自有温度插件文件不存在或为空：$file"
+        exit 1
+    fi
+done
+
+echo "✅ 自有 luci-app-temp-status 文件检查完成"
+
+
 # -------- 固定使用 MT7925 20260605 Wi-Fi 固件 --------
 
 MT7925_FW_COMMIT="bd1c66cf"
@@ -50,71 +69,6 @@ done
 
 echo "✅ MT7925 20260605 Wi-Fi 固件已写入镜像覆盖目录"
 
-
-# -------- 查找已上传的温度卡片文件 --------
-
-TEMP_JS=""
-
-for candidate in \
-    "$SCRIPT_DIR/27_temperature.js" \
-    "$PWD/27_temperature.js" \
-    "$PWD/config/27_temperature.js" \
-    "${GITHUB_WORKSPACE:-$PWD}/config/27_temperature.js"
-do
-    if [ -s "$candidate" ]; then
-        TEMP_JS="$candidate"
-        break
-    fi
-done
-
-if [ -z "$TEMP_JS" ]; then
-    echo "❌ 未找到 27_temperature.js"
-    echo "请确认 config/27_temperature.js 已提交到仓库，"
-    echo "且编译流程保留该文件或将它复制到源码根目录。"
-    exit 1
-fi
-
-# -------- 查找自动识别硬件型号的后台文件 --------
-
-TEMP_BACKEND=""
-
-for candidate in \
-    "$SCRIPT_DIR/luci.temp-status" \
-    "$PWD/luci.temp-status" \
-    "$PWD/config/luci.temp-status" \
-    "${GITHUB_WORKSPACE:-$PWD}/config/luci.temp-status"
-do
-    if [ -s "$candidate" ]; then
-        TEMP_BACKEND="$candidate"
-        break
-    fi
-done
-
-if [ -z "$TEMP_BACKEND" ]; then
-    echo "❌ 未找到 config/luci.temp-status，请先上传后台文件"
-    exit 1
-fi
-
-# -------- 查找温度插件 ACL 文件 --------
-
-TEMP_ACL=""
-
-for candidate in \
-    "$SCRIPT_DIR/luci-app-temp-status.json" \
-    "$PWD/luci-app-temp-status.json" \
-    "$PWD/config/luci-app-temp-status.json" \
-    "${GITHUB_WORKSPACE:-$PWD}/config/luci-app-temp-status.json"
-do
-    if [ -s "$candidate" ]; then
-        TEMP_ACL="$candidate"
-        break
-    fi
-done
-
-if [ -z "$TEMP_ACL" ]; then
-    echo "❌ 未找到 config/luci-app-temp-status.json"
-    exit 1
-fi
 
 # -------- 修改默认配置 --------
 
@@ -173,6 +127,7 @@ uci set dhcp.lan.limit='150'
 uci set dhcp.@dnsmasq[0].sequential_ip='1'
 uci commit dhcp
 EOF
+
 chmod +x files/etc/uci-defaults/99-dhcp-sequential
 
 echo "✅ DHCP 顺序配置写入完成"
@@ -233,8 +188,8 @@ exit 0
 EOF
 
 chmod +x files/etc/board.d/99-default_network
-echo "✅ 网络初始化脚本写入完成：eth1 为 WAN，其余实体 eth 网口为 LAN"
 
+echo "✅ 网络初始化脚本写入完成：eth1 为 WAN，其余实体 eth 网口为 LAN"
 
 
 # -------- 默认使用 Argon 主题 --------
@@ -251,68 +206,53 @@ EOF
 
 chmod +x files/etc/uci-defaults/99-argon-temp
 
-# -------- 添加温度插件并覆盖概览卡片 --------
 
-# 优先复用已有插件源码，避免重复下载同名包。
-TEMP_STATUS_DIR=""
+# -------- 加入自有 luci-app-temp-status --------
 
-for candidate in \
-    package/custom/luci-app-temp-status \
+TEMP_STATUS_DIR="package/custom/luci-app-temp-status"
+
+# 删除编译树中可能存在的其它同名包，避免重复定义。
+for old_dir in \
     package/luci-app-temp-status \
     package/feeds/*/luci-app-temp-status
 do
-    if [ -f "$candidate/Makefile" ]; then
-        TEMP_STATUS_DIR="$candidate"
-        break
+    if [ -e "$old_dir" ] || [ -L "$old_dir" ]; then
+        echo "ℹ️ 移除同名温度插件：$old_dir"
+        rm -rf "$old_dir"
     fi
 done
 
-# 没有找到时直接拉取官方最新版。
-if [ -z "$TEMP_STATUS_DIR" ]; then
-    TEMP_STATUS_DIR="package/custom/luci-app-temp-status"
-    mkdir -p package/custom
+# 每次重新复制自己的插件，避免残留旧文件。
+rm -rf "$TEMP_STATUS_DIR"
+mkdir -p "$TEMP_STATUS_DIR"
 
-    git clone --depth=1 \
-        https://github.com/gSpotx2f/luci-app-temp-status.git \
-        "$TEMP_STATUS_DIR"
-fi
+cp -a "$TEMP_STATUS_SRC/." "$TEMP_STATUS_DIR/"
 
-if [ ! -s "${TEMP_JS:-}" ] || \
-   [ ! -s "${TEMP_BACKEND:-}" ] || \
-   [ ! -s "${TEMP_ACL:-}" ]; then
-
-    echo "❌ 温度文件路径无效"
-
-    printf 'TEMP_JS=%s\nTEMP_BACKEND=%s\nTEMP_ACL=%s\n' \
-        "${TEMP_JS:-}" \
-        "${TEMP_BACKEND:-}" \
-        "${TEMP_ACL:-}"
-
+if [ ! -s "$TEMP_STATUS_DIR/Makefile" ]; then
+    echo "❌ luci-app-temp-status 复制失败"
     exit 1
 fi
 
-# 覆盖前端温度卡片。
-install -Dm0644 "$TEMP_JS" \
-    "$TEMP_STATUS_DIR/htdocs/luci-static/resources/view/status/include/27_temperature.js"
+if [ ! -s "$TEMP_STATUS_DIR/htdocs/luci-static/resources/view/status/include/27_temperature.js" ] || \
+   [ ! -s "$TEMP_STATUS_DIR/root/usr/share/rpcd/ucode/luci.temp-status" ] || \
+   [ ! -s "$TEMP_STATUS_DIR/root/usr/share/rpcd/acl.d/luci-app-temp-status.json" ]; then
+    echo "❌ luci-app-temp-status 文件复制不完整"
+    exit 1
+fi
 
-# 覆盖后台温度读取及 ℃/℉ 全局保存接口。
-install -Dm0644 "$TEMP_BACKEND" \
-    "$TEMP_STATUS_DIR/root/usr/share/rpcd/ucode/luci.temp-status"
+echo "✅ 自有 luci-app-temp-status 已加入编译树"
 
-# 覆盖 RPC ACL，允许 getUnit / setUnit。
-install -Dm0644 "$TEMP_ACL" \
-    "$TEMP_STATUS_DIR/root/usr/share/rpcd/acl.d/luci-app-temp-status.json"
-
-echo "✅ 温度卡片、后台及 ℃/℉ 全局保存 ACL 已加入"
 
 # -------- 添加编译配置，避免重复条目 --------
 
 enable_package() {
     local option="CONFIG_PACKAGE_$1"
+
     sed -i \
         -e "/^${option}=/d" \
         -e "/^# ${option} is not set$/d" \
         .config
+
     printf '%s=y\n' "$option" >> .config
 }
 
@@ -323,6 +263,7 @@ enable_package kmod-video-uvc
 enable_package ppp-mod-pppoe
 
 echo "✅ 温度驱动、温度插件、Argon、UVC、PPPoE 编译配置已加入"
+
 
 # -------- 关闭代理插件默认启用开关 --------
 
