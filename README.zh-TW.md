@@ -1,6 +1,6 @@
 # OpenWrt x86_64 Build
 
-[簡體中文](README.md) | [English](README.en.md) | [正體中文](README.zh-TW.md)
+[簡體中文](README.md) | [English](README.en.md) | **正體中文**
 
 [![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release&style=flat-square)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
 [![OpenWrt](https://img.shields.io/badge/OpenWrt-Official-00B5E2?logo=openwrt&logoColor=white&style=flat-square)](https://openwrt.org/)
