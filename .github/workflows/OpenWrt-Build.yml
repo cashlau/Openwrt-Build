@@ -130,7 +130,8 @@ jobs:
             ../config/.config \
             ../config/customize.sh \
             ../config/27_temperature.js \
-            ../config/luci.temp-status
+            ../config/luci.temp-status \
+            ../config/luci-app-temp-status.json
           do
             if [ ! -s "$file" ]; then
               echo "❌ Missing or empty file: $file"
