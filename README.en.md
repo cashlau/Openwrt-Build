@@ -43,12 +43,13 @@ Package and feed configuration can be found in `scripts/ext_packages.sh` and `fe
 
 ## Usage
 
+Firmware downloads: https://github.com/cashlau/OpenWrt-Build/releases
+
 Open in your browser: `http://192.168.50.1`
 
 - Default username: `root`
 - Default password: blank
 - Please set a password immediately after your first login
-Firmware downloads: https://github.com/cashlau/OpenWrt-Build/releases
 
 ### Build It Yourself
 
