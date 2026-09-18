@@ -39,7 +39,7 @@
 
 瀏覽器開啟：`http://192.168.50.1`  
 預設使用者名稱：`root`，首次登入後請設定密碼。  
-韌體下載：https://github.com/cashlau/Openwrt-Build/releases
+韌體下載：https://github.com/cashlau/OpenWrt-Build/releases
 
 ### 自行編譯
 
