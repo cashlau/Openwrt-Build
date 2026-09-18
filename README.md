@@ -20,13 +20,13 @@
 
 ### 默认插件
 
-- **Passwall**：透明代理、规则分流及服务端功能，支持远程接入家庭网络并经软路由代理出口上网
+- **PassWall**：透明代理、规则分流及服务端功能，支持远程接入家庭网络并经软路由代理出口上网
 - **MosDNS**：DNS 分流、优化及广告域名过滤
 - **全能推送**：微信、钉钉、Telegram 等消息通知
 - **WOL 网络唤醒**：支持 Etherwake、Wake-on-LAN
 - **动态 DNS**：自动更新动态公网 IP
 - **Nikki**：基于 Mihomo 的透明代理管理插件
-- **Momo**：基于 Sing-Box 的透明代理管理插件
+- **Momo**：基于 sing-box 的透明代理管理插件
 - **rtp2httpd**：IPTV RTP / UDP 转 HTTP
 - **USB 打印服务器**：局域网共享 USB 打印机
 - **Cloudflare Tunnel**：无需开放公网端口即可访问内部服务
