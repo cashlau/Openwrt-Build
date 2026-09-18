@@ -91,6 +91,27 @@ if [ -z "$TEMP_BACKEND" ]; then
     exit 1
 fi
 
+# -------- 查找温度插件 ACL 文件 --------
+
+TEMP_ACL=""
+
+for candidate in \
+    "$SCRIPT_DIR/luci-app-temp-status.json" \
+    "$PWD/luci-app-temp-status.json" \
+    "$PWD/config/luci-app-temp-status.json" \
+    "${GITHUB_WORKSPACE:-$PWD}/config/luci-app-temp-status.json"
+do
+    if [ -s "$candidate" ]; then
+        TEMP_ACL="$candidate"
+        break
+    fi
+done
+
+if [ -z "$TEMP_ACL" ]; then
+    echo "❌ 未找到 config/luci-app-temp-status.json"
+    exit 1
+fi
+
 # -------- 修改默认配置 --------
 
 sed -i 's/192\.168\.1\.1/192.168.50.1/g' "$CONFIG_FILE"
@@ -242,6 +263,7 @@ do
     fi
 done
 
+# 没有找到时直接拉取官方最新版。
 if [ -z "$TEMP_STATUS_DIR" ]; then
     TEMP_STATUS_DIR="package/custom/luci-app-temp-status"
     mkdir -p package/custom
@@ -251,19 +273,33 @@ if [ -z "$TEMP_STATUS_DIR" ]; then
         "$TEMP_STATUS_DIR"
 fi
 
-if [ ! -s "${TEMP_JS:-}" ] || [ ! -s "${TEMP_BACKEND:-}" ]; then
-    echo "❌ 温度文件路径无效，请检查 config/27_temperature.js 和 config/luci.temp-status"
-    printf 'TEMP_JS=%s\nTEMP_BACKEND=%s\n' "${TEMP_JS:-}" "${TEMP_BACKEND:-}"
+if [ ! -s "${TEMP_JS:-}" ] || \
+   [ ! -s "${TEMP_BACKEND:-}" ] || \
+   [ ! -s "${TEMP_ACL:-}" ]; then
+
+    echo "❌ 温度文件路径无效"
+
+    printf 'TEMP_JS=%s\nTEMP_BACKEND=%s\nTEMP_ACL=%s\n' \
+        "${TEMP_JS:-}" \
+        "${TEMP_BACKEND:-}" \
+        "${TEMP_ACL:-}"
+
     exit 1
 fi
 
+# 覆盖前端温度卡片。
 install -Dm0644 "$TEMP_JS" \
     "$TEMP_STATUS_DIR/htdocs/luci-static/resources/view/status/include/27_temperature.js"
 
+# 覆盖后台温度读取及 ℃/℉ 全局保存接口。
 install -Dm0644 "$TEMP_BACKEND" \
     "$TEMP_STATUS_DIR/root/usr/share/rpcd/ucode/luci.temp-status"
 
-echo "✅ Argon 温度卡片及硬件型号识别后台已加入"
+# 覆盖 RPC ACL，允许 getUnit / setUnit。
+install -Dm0644 "$TEMP_ACL" \
+    "$TEMP_STATUS_DIR/root/usr/share/rpcd/acl.d/luci-app-temp-status.json"
+
+echo "✅ 温度卡片、后台及 ℃/℉ 全局保存 ACL 已加入"
 
 # -------- 添加编译配置，避免重复条目 --------
 
