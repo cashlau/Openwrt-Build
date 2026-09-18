@@ -1,1 +1,22 @@
-
+{
+	"luci-app-temp-status": {
+		"description": "Grant access to temp-status procedures",
+		"read": {
+			"ubus": {
+				"luci.temp-status": [
+					"getSensors",
+					"getTempData",
+					"getTempStatus",
+					"getUnit"
+				]
+			}
+		},
+		"write": {
+			"ubus": {
+				"luci.temp-status": [
+					"setUnit"
+				]
+			}
+		}
+	}
+}
