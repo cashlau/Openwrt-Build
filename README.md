@@ -4,10 +4,10 @@
 
 基于官方 OpenWrt 源码，通过 GitHub Actions 自动编译集成常用插件的 **x86_64 固件**，并发布至 GitHub Releases。
 
-可直接下载使用，也可以 **Fork 本仓库**，根据自己的硬件和需求修改插件、配置及编译选项，通过 GitHub Actions 自行编译。如需调整依赖或功能，可使用 ChatGPT、Claude 等 AI 工具辅助修改。
+可直接下载使用，也可以 **Fork 本仓库**，根据自己的硬件和需求修改插件、配置及编译选项，通过 GitHub Actions 自行编译。如需调整依赖或功能，可使用 **ChatGPT、Claude、Gemini** 等 AI 工具辅助修改。
 
 ---
-> **提示：** 如需了解各功能、配置项或编译流程，可将本仓库链接提供给 ChatGPT、Claude 等 AI 工具进行解读和辅助配置。
+> **提示：** 如需了解各功能、配置项或编译流程，可将**本仓库链接**提供给 **ChatGPT、Claude、Gemini** 等 AI 工具进行解读和辅助配置。
 ---
 
 ### 主要功能
