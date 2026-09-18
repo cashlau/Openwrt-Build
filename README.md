@@ -1,8 +1,10 @@
 # OpenWrt x86_64 Build
 
-简体中文 | [English](README.en.md) | [正體中文](README.zh-TW.md)
+[简体中文](README.md) | [English](README.en.md) | [正體中文](README.zh-TW.md)
 
-基于官方 OpenWrt 源码，通过 GitHub Actions 自动编译集成常用插件的 **x86_64 固件**，并发布至 GitHub Releases。
+[![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
+
+基于官方 OpenWrt 源码，通过 GitHub Actions 自动编译集成常用插件的 x86_64 固件，并发布至 GitHub Releases。
 
 可直接下载使用，也可以 **Fork 本仓库**，根据自己的硬件和需求修改插件、配置及编译选项，通过 GitHub Actions 自行编译。如需调整依赖或功能，可使用 **ChatGPT、Claude、Gemini** 等 AI 工具辅助修改。
 
