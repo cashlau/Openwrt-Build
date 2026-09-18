@@ -86,6 +86,7 @@ This project uses or integrates the following open-source projects:
 
 - [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
 - [MosDNS](https://github.com/sbwml/luci-app-mosdns)
+- [PushBot](https://github.com/zzsj0928/luci-app-pushbot) — PushBot
 - [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
 - [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
 - [Argon](https://github.com/jerrykuku/luci-theme-argon) — Default LuCI theme
