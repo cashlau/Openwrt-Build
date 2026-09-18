@@ -129,9 +129,11 @@ jobs:
           for file in \
             ../config/.config \
             ../config/customize.sh \
-            ../config/27_temperature.js \
-            ../config/luci.temp-status \
-            ../config/luci-app-temp-status.json
+            ../luci-app-temp-status/Makefile \
+            ../luci-app-temp-status/LICENSE \
+            ../luci-app-temp-status/htdocs/luci-static/resources/view/status/include/27_temperature.js \
+            ../luci-app-temp-status/root/usr/share/rpcd/ucode/luci.temp-status \
+            ../luci-app-temp-status/root/usr/share/rpcd/acl.d/luci-app-temp-status.json
           do
             if [ ! -s "$file" ]; then
               echo "❌ Missing or empty file: $file"
