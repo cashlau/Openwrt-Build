@@ -16,6 +16,7 @@
 ### 主要功能
 
 - 自動取得 OpenWrt 官方最新穩定版原始碼並使用 GitHub Actions 編譯
+- 預設採用 **Argon LuCI 主題**，提供更現代化的 Web 管理介面
 - 支援 English、简体中文、正體中文
 - 預設使用 **PPPoE** 撥號，LAN 位址：`192.168.50.1`
 - 支援 **Intel X710 萬兆網路卡**
@@ -72,4 +73,20 @@ Fork 本專案 → 修改設定 → 開啟 **Actions** → **Run workflow** → 
 ## LuCI 介面預覽
 
 <img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/535a58fc-8838-4473-b146-71cb28f683a0" />
+
+## 致謝
+
+感謝 [OpenWrt](https://github.com/openwrt/openwrt) 專案以及所有第三方開源軟體的作者與維護者。
+
+本專案使用或整合了以下開源專案：
+
+- [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
+- [MosDNS](https://github.com/sbwml/luci-app-mosdns)
+- [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
+- [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
+- [Argon](https://github.com/jerrykuku/luci-theme-argon) — 預設 LuCI 主題
+
+感謝所有開發者及貢獻者為開源社群所做的貢獻。
+
+各專案的版權及授權條款歸其原作者所有。
 
