@@ -7,7 +7,7 @@
 
 Automatically builds OpenWrt x86_64 firmware from the official OpenWrt source with commonly used packages via GitHub Actions, and publishes the builds to GitHub Releases.
 
-You can download the prebuilt firmware directly, or **Fork this repository** and customize packages, configuration, and build options for your own hardware. **ChatGPT**, **Claude**, or other AI tools can also help with dependency and configuration changes.
+You can download and use the prebuilt firmware directly, or **fork this repository** to customize packages, configurations, and build options for your own hardware and requirements.
 
 ---
 > **Tip:** If you need help understanding the features, configuration options, or build process, you can provide the **repository URL** to AI tools such as **ChatGPT, Claude, or Gemini** for explanation and configuration assistance.
