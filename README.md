@@ -86,6 +86,7 @@ Fork 本仓库 → 修改配置 → 打开 **Actions** → **Run workflow** → 
 
 - [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
 - [MosDNS](https://github.com/sbwml/luci-app-mosdns)
+- [全能推送](https://github.com/zzsj0928/luci-app-pushbot)
 - [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
 - [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
 - [Argon](https://github.com/jerrykuku/luci-theme-argon) — 默认 LuCI 主题
