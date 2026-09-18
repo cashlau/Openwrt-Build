@@ -69,21 +69,6 @@
 - Для первоначальной настройки рекомендуется использовать проводное подключение
 - Сторонние пакеты могут временно иметь проблемы совместимости или сборки после обновлений upstream-проектов
 
-## Благодарности
-
-Благодарим проект [OpenWrt](https://github.com/openwrt/openwrt), а также авторов и сопровождающих стороннего программного обеспечения с открытым исходным кодом.
-
-В проекте используются или интегрированы следующие проекты:
-
-- [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
-- [MosDNS](https://github.com/sbwml/luci-app-mosdns)
-- [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
-- [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
-- [Argon](https://github.com/jerrykuku/luci-theme-argon) — тема LuCI по умолчанию
-
-Спасибо всем разработчикам и участникам за вклад в сообщество открытого программного обеспечения.
-
-Авторские права и лицензии каждого проекта принадлежат их соответствующим авторам.
 
 ## Отказ от ответственности
 
@@ -98,3 +83,20 @@
 ## Предварительный просмотр интерфейса LuCI
 
 <img width="1920" height="1031" alt="OpenWrt LuCI" src="https://github.com/user-attachments/assets/b384eb96-0c18-4a43-a084-0f3f25ac5874" />
+
+## Благодарности
+
+Благодарим проект [OpenWrt](https://github.com/openwrt/openwrt), а также авторов и сопровождающих стороннего программного обеспечения с открытым исходным кодом.
+
+В проекте используются или интегрированы следующие проекты:
+
+- [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
+- [MosDNS](https://github.com/sbwml/luci-app-mosdns)
+- [PushBot](https://github.com/zzsj0928/luci-app-pushbot) — PushBot
+- [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
+- [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
+- [Argon](https://github.com/jerrykuku/luci-theme-argon) — тема LuCI по умолчанию
+
+Спасибо всем разработчикам и участникам за вклад в сообщество открытого программного обеспечения.
+
+Авторские права и лицензии каждого проекта принадлежат их соответствующим авторам.
