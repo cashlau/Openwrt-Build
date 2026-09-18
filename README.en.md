@@ -39,7 +39,7 @@ Package and feed configuration can be found in `scripts/ext_packages.sh` and `fe
 
 Open: `http://192.168.50.1`  
 Default username: `root`. Please set a password after first login.  
-Firmware downloads: https://github.com/cashlau/Openwrt-Build/releases
+Firmware downloads: https://github.com/cashlau/OpenWrt-Build/releases
 
 ### Build It Yourself
 
