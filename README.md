@@ -3,9 +3,6 @@
 [简体中文](README.md) | [English](README.en.md) | [正體中文](README.zh-TW.md)
 
 [![OpenWrt Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=OpenWrt%20Release&style=flat-square)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
-[![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release&style=plastic)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
-[![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release&style=for-the-badge)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
-[![Stable Version](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Stable%20Version&style=flat-square)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
 
 基于官方 OpenWrt 源码，通过 GitHub Actions 自动编译集成常用插件的 x86_64 固件，并发布至 GitHub Releases。
 
