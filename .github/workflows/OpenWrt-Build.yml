@@ -7,20 +7,20 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: Restore last built version cache
         id: cache-version
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: last_build_version.txt
           key: last-build-version-
@@ -74,14 +74,13 @@ jobs:
 
       - name: Free up disk space
         if: steps.compare.outputs.should_build == 'true'
-        uses: jlumbroso/free-disk-space@main
+        uses: endersonmenezes/free-disk-space@v4
         with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
+          remove_android: true
+          remove_dotnet: true
+          remove_haskell: true
+          remove_tool_cache: true
+          remove_swap: true
 
       - name: Show available disk space
         if: steps.compare.outputs.should_build == 'true'
@@ -108,6 +107,7 @@ jobs:
           TAG: ${{ steps.get_latest_tag.outputs.latest_tag }}
         run: |
           echo "Cloning branch/tag: $TAG"
+
           git clone --depth=1 --branch "$TAG" \
             https://github.com/openwrt/openwrt.git openwrt
 
@@ -146,8 +146,14 @@ jobs:
 
           while IFS= read -r package; do
             [ -n "$package" ] || continue
+
             option="CONFIG_PACKAGE_$package"
-            sed -i -e "/^${option}=/d" -e "/^# ${option} is not set$/d" .config
+
+            sed -i \
+              -e "/^${option}=/d" \
+              -e "/^# ${option} is not set$/d" \
+              .config
+
             printf '%s=y\n' "$option" >> .config
           done < .external-package-options
 
@@ -189,6 +195,7 @@ jobs:
           body: |
             🎉 OpenWrt x86_64 ${{ steps.get_latest_tag.outputs.latest_tag }}
             📅 构建时间：${{ steps.buildtime.outputs.time }}（Asia/Taipei）
+            🐧 构建环境：Ubuntu 26.04
             🔗 上游源码：https://github.com/openwrt/openwrt/tree/${{ steps.get_latest_tag.outputs.latest_tag }}
           artifacts: openwrt/bin/targets/x86/64/*.img.gz
           makeLatest: true
@@ -205,7 +212,7 @@ jobs:
 
       - name: Save last built version cache
         if: steps.compare.outputs.should_build == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: last_build_version.txt
           key: last-build-version-${{ github.run_id }}-${{ github.run_attempt }}
