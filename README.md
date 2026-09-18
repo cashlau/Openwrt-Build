@@ -69,7 +69,23 @@ Fork 本仓库 → 修改配置 → 打开 **Actions** → **Run workflow** → 
 
 ---
 
-### 主页预览
+### LuCI 界面预览
 
 <img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/b384eb96-0c18-4a43-a084-0f3f25ac5874" />
+
+## 致谢
+
+感谢 [OpenWrt](https://github.com/openwrt/openwrt) 项目以及所有第三方开源软件的作者和维护者。
+
+本项目使用或集成了以下开源项目：
+
+- [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
+- [MosDNS](https://github.com/sbwml/luci-app-mosdns)
+- [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
+- [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
+- [Argon](https://github.com/jerrykuku/luci-theme-argon) — 默认 LuCI 主题
+
+感谢所有开发者及贡献者为开源社区所做的贡献。
+
+各项目的版权及许可证归其原作者所有。
 
