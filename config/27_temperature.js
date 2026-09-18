@@ -30,7 +30,6 @@ document.head.append(E('style',{type:'text/css'},`
 	gap:8px 24px;width:100%;padding:7px 14px 10px;margin:0;box-sizing:border-box
 }
 
-/* 一行时：名称紧贴自己的温度条 */
 .temp-argon-card{
 	--temp-accent:#78dc91;--temp-track:#e5e9ed;
 	display:grid;grid-template-columns:max-content minmax(0,1fr);
@@ -38,7 +37,6 @@ document.head.append(E('style',{type:'text/css'},`
 	padding:0;margin:0;box-sizing:border-box;background:transparent;border:0;box-shadow:none
 }
 
-/* 只要换行：统一名称宽度，温度条全部对齐 */
 .temp-argon-grid.temp-wrapped .temp-argon-card{
 	grid-template-columns:64px minmax(0,1fr)
 }
@@ -185,7 +183,7 @@ return baseclass.extend({
 						card={
 							key:'wifi_'+wifi[2],
 							name:tempText('Wi-Fi','无线网卡','無線網卡'),
-							desc:tempModel('wifi_'+wifi[2],info.model||wifi[1].toUpperCase()),
+							desc:info.model||wifi[1].toUpperCase(),
 							path:source.path,warm:75,hot:90
 						};
 
@@ -209,11 +207,15 @@ return baseclass.extend({
 			let n=this.tempNodes && this.tempNodes[card.key];
 			if (!n) continue;
 
+			let modelText=tempModel(card.key,card.desc);
+			if (card.key.indexOf('wifi_')===0) modelText=modelText.toUpperCase();
+
 			n.row.className='temp-argon-card'+state;
 			n.fill.style.setProperty('--temp-scale',level/100);
-			n.model.textContent=tempModel(card.key,card.desc);
+			n.model.textContent=modelText;
 			n.model.title=card.desc;
 			n.value.textContent=temp==null?'--':temp+' °C';
+			n.progress.title=card.desc+' / '+(temp==null?'--':temp+' °C');
 		}
 	},
 
@@ -222,19 +224,23 @@ return baseclass.extend({
 
 		this.tempGrid=E('div',{'class':'temp-argon-grid'},cards.map(card => {
 			let fill=E('div',{'class':'temp-argon-fill','style':'--temp-scale:0;transition:none;'});
-			let model=E('span',{'class':'temp-argon-model','title':card.desc},tempModel(card.key,card.desc));
+			let modelText=tempModel(card.key,card.desc);
+			if (card.key.indexOf('wifi_')===0) modelText=modelText.toUpperCase();
+
+			let model=E('span',{'class':'temp-argon-model','title':card.desc},modelText);
 			let value=E('span',{'class':'temp-argon-value'},'--');
+			let progress=E('div',{'class':'temp-argon-progress'},[
+				fill,E('div',{'class':'temp-argon-progress-text'},[model,value])
+			]);
 
 			let row=E('div',{'class':'temp-argon-card'},[
 				E('div',{'class':'temp-argon-meta'},[
 					E('span',{'class':'temp-argon-name'},card.name)
 				]),
-				E('div',{'class':'temp-argon-progress'},[
-					fill,E('div',{'class':'temp-argon-progress-text'},[model,value])
-				])
+				progress
 			]);
 
-			this.tempNodes[card.key]={row,fill,model,value};
+			this.tempNodes[card.key]={row,fill,model,value,progress};
 			return row;
 		}));
 
