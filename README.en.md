@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | [English](README.en.md) | [正體中文](README.zh-TW.md)
 
-[![Latest Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=Latest%20Release)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
+[![OpenWrt Release](https://img.shields.io/github/v/release/cashlau/OpenWrt-Build?label=OpenWrt%20Release&style=flat-square)](https://github.com/cashlau/OpenWrt-Build/releases/latest)
 
 Automatically builds OpenWrt x86_64 firmware from the official OpenWrt source with commonly used packages via GitHub Actions, and publishes the builds to GitHub Releases.
 
