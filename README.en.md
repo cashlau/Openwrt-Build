@@ -59,9 +59,13 @@ Fork this repository → edit the configuration → open **Actions** → click *
 - Back up your configuration before upgrades and use a wired connection for initial setup
 - Third-party packages may occasionally fail to build or become incompatible after upstream updates
 
-### Disclaimer
+## Disclaimer
 
-This project is intended for OpenWrt learning, research, and personal use. Firmware is built from official OpenWrt source together with third-party open-source packages. No guarantee is made regarding the security, stability, or compatibility of third-party packages. Back up important data and confirm hardware compatibility before flashing.
+This project is intended solely for OpenWrt learning, research, and personal device use. The firmware is built from the official OpenWrt source code together with third-party open-source packages. No guarantee is made regarding the security, stability, or compatibility of third-party packages.
+
+Users assume all risks associated with using this project, including device malfunction, configuration loss, data loss, or network issues. Please back up important data and verify hardware compatibility before flashing the firmware.
+
+Some features may be subject to regional restrictions, network conditions, applicable laws, regulations, or service terms. Users are responsible for ensuring compliance with the laws and service terms applicable in their region.
 
 ---
 
