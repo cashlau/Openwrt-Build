@@ -16,6 +16,7 @@ You can download and use the prebuilt firmware directly, or **fork this reposito
 ### Features
 
 - Automatically tracks the latest stable OpenWrt source and builds with GitHub Actions
+- Uses the **Argon LuCI theme** by default, providing a more modern web management interface
 - Supports English, Simplified Chinese, and Traditional Chinese
 - Uses **PPPoE** by default; LAN address: `192.168.50.1`
 - Includes support for **Intel X710 10GbE adapters**
@@ -69,6 +70,22 @@ Some features may be subject to regional restrictions, network conditions, appli
 
 ---
 
-### Homepage Preview
+### LuCI Interface Preview
 
 <img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/c18197b7-25f0-4156-9105-a3e84a8d308f" />
+
+## Acknowledgements
+
+Thanks to the [OpenWrt](https://github.com/openwrt/openwrt) project and all authors and maintainers of the third-party open-source software used in this project.
+
+This project uses or integrates the following open-source projects:
+
+- [PassWall](https://github.com/Openwrt-Passwall/openwrt-passwall)
+- [MosDNS](https://github.com/sbwml/luci-app-mosdns)
+- [Nikki](https://github.com/nikkinikki-org/OpenWrt-nikki)
+- [Momo](https://github.com/nikkinikki-org/OpenWrt-momo)
+- [Argon](https://github.com/jerrykuku/luci-theme-argon) — Default LuCI theme
+
+Many thanks to all developers and contributors for their contributions to the open-source community.
+
+Copyright and licenses for each project remain with their respective authors.
