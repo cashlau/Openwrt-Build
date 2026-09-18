@@ -24,7 +24,7 @@
 - **MosDNS**：DNS 分流、最佳化及廣告網域過濾
 - **全能推送**：微信、釘釘、Telegram 等訊息通知
 - **WOL 網路喚醒**：支援 Etherwake、Wake-on-LAN
-- **動態 DNS**：自動更新動態公網 IP
+- **動態 DNS**：公網 IP 變更時自動更新網域名稱解析記錄
 - **Nikki**：基於 Mihomo 的透明代理管理外掛
 - **Momo**：基於 Sing-Box 的透明代理管理外掛
 - **rtp2httpd**：IPTV RTP / UDP 轉 HTTP
