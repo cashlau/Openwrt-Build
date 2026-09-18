@@ -20,7 +20,7 @@ You can download the prebuilt firmware directly, or **Fork this repository** and
 
 ### Included Packages
 
-- **Passwall**: Transparent proxy, rule-based traffic routing, and server-side functionality, with support for remote access to your home network through the router's proxy gateway
+- **PassWall**: Transparent proxy, rule-based traffic routing, and server-side functionality, with support for remote access to your home network through the router's proxy gateway
 - **MosDNS**: DNS routing, optimization, and ad-domain filtering
 - **PushBot**: Notifications for WeChat, DingTalk, Telegram, and more
 - **Wake on LAN**: Etherwake and Wake-on-LAN support
